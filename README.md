@@ -4,9 +4,9 @@ Branched from [SNOParser](https://github.com/d07RiV/SNOParser).
 
 This tool can be build for Windows (Visual Studio 2013 or higher) or Linux (GCC 4.7 or higher). There is no flexible config, so if you want to adjust it for your own use, you will have to edit the source code.
 
-Usage: ./autoparse <build-id>
+Usage: `./autoparse <build-id>`
 
-Where <build-id> is a 5 digit number of the build you want to get information from. The tool downloads all necessary files (around 100MB for the first version loaded, and a ~40MB for subsequent versions; it uses up 1-2GB disk space though) and creates .html files for the given version and diffs for the previous and current live versions. The whole process takes well under a minute to complete, making it suitable for automated use.
+Where `<build-id>` is a 5 digit number of the build you want to get information from. The tool downloads all necessary files (around 100MB for the first version loaded, and a ~40MB for subsequent versions; it uses up 1-2GB disk space though) and creates .html files for the given version and diffs for the previous and current live versions. The whole process takes well under a minute to complete, making it suitable for automated use.
 
 Required libraries:
 

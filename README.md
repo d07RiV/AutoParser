@@ -19,7 +19,9 @@ The following sections describe the default operation mode and what parts of cod
 
 The `Work` folder is always located alongside the executable and contains files necessary for the program to work. During program execution, a `cdncache` subfolder is created to store files loaded from the CDN, and `.js` files are created containing item and skill data for the given version.
 
-### Output folder
+### Output folder (!!required!!)
+
+**The output folder has to point to an existing folder for the program to run**
 
 The output folder is where the resulting `.html` files will be stored. It can be configured at the top of `autoparse.cpp` (defaulting to `/home/d3planner/public_html` on Linux). The output files are saved in three different subfolders: `game` will contain files named `(items|itemsets).<build-id>.html`; `diff` will contain files named `(items|itemsets|powers).<build-id>.html`; `powers` will contain files named `jspowers.<build-id>.js`.
 

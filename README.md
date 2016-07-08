@@ -10,7 +10,7 @@ Where `<build-id>` is a 5 digit number of the build you want to get information 
 
 Required libraries:
 
-* `zlib` - both Windows and Linux. A VS2013 library is attached.
+* `zlib` - both Windows and Linux. A VS2013 library is attached (currently configured for /MD 32 bit and 64 bit debug, and /MT for 64 bit release; edit the pragmas in `common.cpp` if required).
 * `curl` - Linux only. SSL is not required.
 
 The following sections describe the default operation mode and what parts of code needs to be changed in order to adjust it.

@@ -1,0 +1,400 @@
+#pragma once
+
+// 2.2.0
+//#define SNOBUILD 29699
+// 2.3.0
+#define SNOBUILD 32445
+
+#include "file.h"
+#include "json.h"
+#include "path.h"
+#include "logger.h"
+
+uint32 HashName(std::string const& str);
+uint32 HashNameLower(std::string const& str);
+
+class SnoParser {
+protected:
+  std::string name_;
+  std::vector<uint8> data_;
+public:
+  std::string const& name() const {
+    return name_;
+  }
+  uint32 size() const {
+    return data_.size();
+  }
+  bool contains(uint32 offset, uint32 size) const {
+    return size && offset <= 0xFFFFFFFF - size && offset + size <= data_.size();
+  }
+  uint8* data(uint32 offset) {
+    return &data_[offset];
+  }
+  uint8 const* data(uint32 offset) const {
+    return &data_[offset];
+  }
+
+#ifdef _MSC_VER
+  static __declspec(thread) SnoParser* context;
+#else
+  static __thread SnoParser* context;
+#endif
+};
+
+struct SnoInfo {
+  char const* type;
+  char const* ext;
+  const uint32 index;
+};
+
+class SnoLoader {
+protected:
+  virtual std::vector<std::string> listdir(SnoInfo const& type) = 0;
+  virtual File loadfile(SnoInfo const& type, char const* name) = 0;
+public:
+  virtual uint32 hash() const = 0;
+  virtual uint32 build() const { return 0; }
+  virtual std::string version() const { return "unknown"; }
+
+  template<class T>
+  std::vector<std::string> list() {
+    return listdir(T::info());
+  }
+
+  template<class T>
+  File load(std::string const& name) {
+    return loadfile(T::info(), name.c_str());
+  }
+
+  template<class T>
+  File load(char const* name) {
+    return name ? loadfile(T::info(), name) : File();
+  }
+
+  template<class T>
+  class SnoAll;
+  template<class T>
+  SnoAll<T> all();
+
+  template<class T>
+  class SnoAllJson {
+  public:
+    class Iterator {
+    public:
+      bool operator==(Iterator const& rhs) {
+        return iter_ == rhs.iter_;
+      }
+      bool operator!=(Iterator const& rhs) {
+        return iter_ != rhs.iter_;
+      }
+      Iterator& operator++() {
+        valid_ = false;
+        ++iter_;
+        return *this;
+      }
+
+      json::Value const& operator*() {
+        return *parse();
+      }
+      json::Value const* operator->() {
+        return parse();
+      }
+    private:
+      friend class SnoAllJson<T>;
+      Iterator(SnoLoader* loader, std::vector<std::string>::const_iterator const& iter)
+        : loader_(loader)
+        , iter_(iter)
+        , valid_(false)
+      {}
+      json::Value* parse() {
+        if (!valid_) {
+          value_.clear();
+          Logger::item(iter_->c_str());
+          File src = loader_->load<T>(*iter_);
+          if (src) {
+            json::BuilderVisitor builder(value_);
+            T::parse(src, &builder);
+            builder.onEnd();
+          }
+          valid_ = true;
+        }
+        return &value_;
+      }
+
+      SnoLoader* loader_;
+      std::vector<std::string>::const_iterator iter_;
+      bool valid_;
+      json::Value value_;
+    };
+
+    Iterator begin() const {
+      return Iterator(loader_, list_.begin());
+    }
+    Iterator end() const {
+      return Iterator(loader_, list_.end());
+    }
+    ~SnoAllJson() {
+      Logger::end();
+    }
+  private:
+    friend class SnoLoader;
+    SnoAllJson(SnoLoader* loader)
+      : loader_(loader)
+      , list_(loader->list<T>())
+    {
+      Logger::begin(list_.size(), fmtstring("Parsing %s", T::type()).c_str());
+    }
+    SnoLoader* loader_;
+    std::vector<std::string> list_;
+  };
+  template<class T>
+  SnoAllJson<T> json() {
+    return SnoAllJson<T>(this);
+  }
+
+  template<class T>
+  void dump(std::string const& name) {
+    File src = load<T>(name);
+    if (!src) return;
+    File dst(path::work() / fmtstring("%s.%s", T::type(), version().c_str()) / name + ".txt", "wt");
+    if (!dst) return;
+    json::WriterVisitor writer(dst);
+    writer.setIndent(2);
+    T::parse(src, &writer);
+    writer.onEnd();
+  }
+  template<class T>
+  void dump() {
+    for (auto& name : Logger::Loop(list<T>(), fmtstring("Dumping %s", T::type()).c_str())) {
+      dump<T>(name);
+    }
+  }
+
+  template<class T>
+  static std::vector<std::string> List() {
+    return primary->list<T>();
+  }
+  template<class T>
+  static File Load(std::string const& name) {
+    return primary->load<T>(name);
+  }
+  template<class T>
+  static File Load(char const* name) {
+    return primary->load<T>(name);
+  }
+  template<class T>
+  static SnoAll<T> All() {
+    return primary->all<T>();
+  }
+  template<class T>
+  static SnoAll<T> Json() {
+    return primary->json<T>();
+  }
+  template<class T>
+  static void Dump(std::string const& name) {
+    primary->dump<T>(name);
+  }
+  template<class T>
+  static void Dump() {
+    primary->dump<T>();
+  }
+
+  static SnoLoader* primary;
+};
+
+template<class T>
+class SnoFile : public SnoParser {
+  typename T::Type* object_;
+public:
+  SnoFile(File file, std::string const& name = "")
+    : object_(nullptr)
+  {
+    name_ = name;
+    if (!file) return;
+    data_.resize(file.size() - 16);
+    file.seek(16);
+    if (file.read(&data_[0], data_.size())) {
+      SnoParser::context = this;
+      object_ = new(&data_[0]) typename T::Type;
+      SnoParser::context = nullptr;
+    }
+  }
+  SnoFile(std::string const& name, SnoLoader* loader = SnoLoader::primary)
+    : SnoFile(loader->load<T>(name), name)
+  {}
+  SnoFile(char const* name, SnoLoader* loader = SnoLoader::primary)
+    : SnoFile(loader->load<T>(name), name ? name : "")
+  {}
+
+  operator bool() const {
+    return object_ != nullptr;
+  }
+  operator typename T::Type*() {
+    return object_;
+  }
+  operator typename T::Type const*() const {
+    return object_;
+  }
+
+  typename T::Type* operator->() {
+    return object_;
+  }
+  typename T::Type const* operator->() const {
+    return object_;
+  }
+
+  void dump(File to) {
+    json::WriterVisitor writer(to);
+    writer.setIndent(2);
+    if (object_) {
+      object_->serialize(&writer);
+    } else {
+      writer.onNull();
+    }
+    writer.onEnd();
+  }
+};
+
+template<class T>
+class SnoLoader::SnoAll {
+public:
+  class Iterator {
+  public:
+    ~Iterator() {
+      delete file_;
+    }
+
+    bool operator==(Iterator const& rhs) {
+      return iter_ == rhs.iter_;
+    }
+    bool operator!=(Iterator const& rhs) {
+      return iter_ != rhs.iter_;
+    }
+    Iterator& operator++() {
+      delete file_;
+      file_ = nullptr;
+      ++iter_;
+      return *this;
+    }
+
+    SnoFile<T>& operator*() {
+      return *parse();
+    }
+    SnoFile<T>* operator->() {
+      return parse();
+    }
+  private:
+    friend class SnoAll<T>;
+    Iterator(SnoLoader* loader, std::vector<std::string>::const_iterator const& iter)
+      : loader_(loader)
+      , iter_(iter)
+      , file_(nullptr)
+    {}
+    SnoFile<T>* parse() {
+      if (file_ == nullptr) {
+        Logger::item(iter_->c_str());
+        file_ = new SnoFile<T>(*iter_, loader_);
+      }
+      return file_;
+    }
+
+    SnoLoader* loader_;
+    std::vector<std::string>::const_iterator iter_;
+    SnoFile<T>* file_;
+  };
+
+  Iterator begin() const {
+    return Iterator(loader_, list_.begin());
+  }
+  Iterator end() const {
+    return Iterator(loader_, list_.end());
+  }
+  ~SnoAll() {
+    Logger::end();
+  }
+private:
+  friend class SnoLoader;
+  SnoAll(SnoLoader* loader)
+    : loader_(loader)
+    , list_(loader->list<T>())
+  {
+    Logger::begin(list_.size(), fmtstring("Parsing %s", T::type()).c_str());
+  }
+  SnoLoader* loader_;
+  std::vector<std::string> list_;
+};
+template<class T>
+SnoLoader::SnoAll<T> SnoLoader::all() {
+  return SnoAll<T>(this);
+}
+
+class SnoSysLoader : public SnoLoader {
+protected:
+  std::string dir_;
+  std::vector<std::string> listdir(SnoInfo const& type);
+  File loadfile(SnoInfo const& type, char const* name);
+public:
+  SnoSysLoader(std::string dir = "");
+  uint32 hash() const {
+    return HashNameLower(dir_);
+  }
+  static SnoSysLoader primary;
+};
+
+class SnoCascLoader : public SnoLoader {
+protected:
+  uint32 hash_;
+  uint32 build_;
+  std::string version_;
+  std::string lang_;
+  void* handle_;
+  std::vector<std::string> listdir(SnoInfo const& type);
+  File loadfile(SnoInfo const& type, char const* name);
+public:
+  uint32 hash() const {
+    return hash_;
+  }
+  uint32 build() const {
+    return build_;
+  }
+  std::string version() const {
+    return version_;
+  }
+  SnoCascLoader(std::string dir, std::string lang = "");
+  ~SnoCascLoader();
+
+  static File cascFile(void* hFile);
+};
+
+class SnoCdnLoader : public SnoLoader {
+protected:
+  struct CdnImpl;
+  uint32 hash_;
+  std::string lang_;
+  CdnImpl* handle_;
+  std::vector<std::string> listdir(SnoInfo const& type);
+  File loadfile(SnoInfo const& type, char const* name);
+public:
+  struct BuildInfo {
+    uint32 build;
+    std::string version;
+  };
+
+  uint32 hash() const {
+    return hash_;
+  }
+  uint32 build() const;
+  std::string version() const;
+  SnoCdnLoader(std::string const& build, std::string lang = "");
+  ~SnoCdnLoader();
+
+  std::map<std::string, std::string> const& buildinfo();
+
+  std::map<istring, std::string> install();
+  File load(std::string const& hash);
+
+  static std::vector<std::string> builds();
+  static std::string livebuild();
+  static std::map<std::string, std::string> buildinfo(std::string const& build);
+  static bool parsebuild(std::map<std::string, std::string> const& config, BuildInfo& info);
+};

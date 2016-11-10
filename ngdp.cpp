@@ -62,6 +62,12 @@ namespace NGDP {
     }
     base_ = "http://" + cdns[region].hosts[0] + "/" + cdns[region].path + "/";
     version_ = versions[region];
+    if (app == "d3") {
+      auto v2 = GetVersions("d3t");
+      if (v2.count(region)) {
+        version_.version2 = v2[region].version;
+      }
+    }
   }
 
   std::string NGDP::geturl(std::string const& hash, std::string const& type, bool index) const {

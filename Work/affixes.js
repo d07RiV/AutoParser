@@ -32,39 +32,97 @@
     "crusader": "Wrath"
   },
   "AffixFix": {
-    "9": [
-      [125, 1],
-      [163, 5],
-      [670, 7],
-      [1086, 8],
-      [1176, 9]
-    ],
-    "6": [
-      [125, 1],
-      [164, 4],
-      [671, 6]
-    ],
-    "5": [
-      [165, 3],
-      [672, 5]
-    ],
-    "0": [],
-    "-1": [
-      [678, -1]
-    ],
-    "-11": [
-      [135, -1],
-      [338, -3],
-      [687, -10],
-      [1064, -11]
-    ],
-    "-12": [
-      [135, -1],
-      [338, -3],
-      [687, -10],
-      [1064, -11],
-      [1309, -12]
-    ]
+    "0": "Wizard_DiamondSkin/Script Formula 39", // Defense
+    "10": "Barbarian_Leap_OLD/Physical Damage Min", // Strength
+    "34": "1xx_Superior Armor Def 6",
+    "35": "1xx_Superior Armor",
+    "50": "1xx_Gold VIII Secondary",
+    "57": "X1_Monk_MantraOfHealing_v2/Script Formula 2", // Level
+    "60": "1xx_MF IX Secondary",
+    "71": "1xx_FurySetPoint I",
+    "73": "1xx_WrathHeals 12 Two-Handed",
+    "77": "1xx_Experience XIII",
+    "82": "1xx_HealthGlobeChance I",
+    "86": "1xx_HealthGlobeBonus 16",
+    "93": "21x_ArcaneResist X",
+    "96": "21x_ResistAll VIII",
+    "102": "Wizard_MagicMissile_Speed/Projectile Speed", // Skill_Total
+    "126": "21x_Regen 19 Secondary",
+    "134": "1xx_Life VI Secondary",
+    "150": "X1_MaxWrath 6 Legendary",
+    "156": "X1_WrathRegen 14 Two-Handed",
+    "168": "1xx_Run 6",
+    "187": "zolt_Tablet_stateChange/Attack Speed", // Casting_Speed_Total
+    "192": "1xx_Superior Weapon Speed 6",
+    "194": "1xx_Kings XI",
+    "198": "ZombieFemale_Projectile/Attack Speed", // Attacks_Per_Second_Total
+    "200": "1xx_Haste 10 Secondary",
+    "207": "X1_CooldownReduction 6 Secondary",
+    "209": "BareHandedPassive/Generic Buff Attribute 1 And Parameter", // Damage_Delta
+    "211": "BareHandedPassive/Generic Buff Attribute 0 And Parameter", // Damage_Min
+    "226": "1xx_Superior Weapon MaxDmg 6",
+    "234": "1xx_Superior Weapon MinDmg 6",
+    "237": "1xx_Superior Weapon 7",
+    "238": "1xx_Damage VI",
+    "241": "1xx_DamageBonusPhysical 4",
+    "245": "1xx_CriticalChance VIII Secondary",
+    "250": "1xx_Superior Weapon Crit Dmg 6",
+    "260": "1xx_Block 11 Secondary",
+    "331": "21x_Thorns 16 Secondary",
+    "335": "1xx_LifeS 11 Two-Handed",
+    "337": "1xx_HitMana 12",
+    "340": "1xx_KillMana 12",
+    "341": "1xx_ArcanePowerOnCrit 6",
+    "342": "21x_HitLife 15 Two-Handed",
+    "343": "21x_KillLife 15 Two-Handed",
+    "381": "1xx_Sockets Bracer V",
+    "677": "X1_Wizard_Wormhole/Script Formula 7", // Rune_A
+    "678": "X1_WickerMan_FirePhantom/RuneE Proc Scalar", // Rune_B
+    "679": "X1_Monk_Epiphany/Script Formula 30", // Rune_C
+    "680": "X1_Monk_MantraOfRetribution_v2/Script Formula 23", // Rune_D
+    "681": "X1_SpectralHound_Buff/Script Formula 13", // Rune_E
+    "682": "1xx_ResistStun 1",
+    "684": "1xx_ResistRoot 1",
+    "686": "1xx_ResistFreeze 1",
+    "688": "1xx_ResistStunRootFreeze 1",
+    "689": "1xx_CCReduction 8",
+    "722": "X1_ResourceCostReduction 6 Secondary",
+    "1053": "1xx_GoldPickUpRadius 7",
+    "1056": "Trait_Barbarian_Fury/Fury Gained Per Percent Health Lost", // Resource_Gain_Bonus_Percent
+    "1094": "1xx_HitFear 12",
+    "1095": "1xx_HitStun 12",
+    "1096": "1xx_HitBlind 12",
+    "1097": "1xx_HitFreeze 12",
+    "1098": "1xx_HitChill 12",
+    "1099": "1xx_HitSlow 12",
+    "1100": "1xx_HitImmobilize 12",
+    "1101": "1xx_HitKnockback 12",
+    "1105": "1xx_DefenseMissile 5",
+    "1106": "1xx_DefenseMelee 5",
+    "1108": "1xx_DamReductionVsElite 5",
+    "1109": "1xx_DamageReductionArcane 9",
+    "1110": "1xx_DamageVsMonsterTypeHuman 6",
+    "1111": "1xx_DamageVsElite 5 Secondary",
+    "1117": "1xx_WeaponHitFear2h 12",
+    "1118": "1xx_WeaponHitStun2h 12",
+    "1119": "1xx_WeaponHitBlind2h 12",
+    "1120": "1xx_WeaponHitFreeze2h 12",
+    "1121": "1xx_WeaponHitChill2h 12",
+    "1122": "1xx_WeaponHitSlow2h 12",
+    "1123": "1xx_WeaponHitImmobilize2h 12",
+    "1124": "1xx_WeaponHitKnockback2h 12",
+    "1173": "1xx_Skill_Wizard_Blizzard 1",
+    "1185": "1xx_PrimaryAttribute_Str 17 Two-Handed Legendary",
+    "1186": "1xx_PrimaryAttribute_Dex 17 Two-Handed Legendary",
+    "1187": "1xx_PrimaryAttribute_Int 17 Two-Handed Legendary",
+    "1188": "1xx_PrimaryAttribute_Vit 17 Legendary",
+    "1189": "1xx_REQ 19",
+    "1192": "1xx_Indestructible 2",
+    "1270": "x1_ProcPower_ReapersWraps",
+    "1297": "1xx_BindOnEquip",
+    "1331": "X1_SplashDamage 6 Secondary",
+    "1332": "X1_CrushingBlow 6 Secondary",
+    "1377": "X1_Monk_MysticAlly_v2/Script Formula 7" // Effective_Level
   },
   "Affixes": {
     "10": "Strength_Item",

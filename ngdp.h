@@ -44,6 +44,7 @@ namespace NGDP {
     std::string cdn;
     uint32 id;
     std::string version;
+    std::string version2;
   };
   std::map<std::string, VersionData> GetVersions(std::string const& app = PROGRAM);
 

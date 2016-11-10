@@ -20,6 +20,7 @@
 #include "common.h"
 #include "parser.h"
 #include "description.h"
+#include "types/Power.h"
 
 class PowerTag {
   enum FormulaState { sNone, sCurrent, sDone };
@@ -41,6 +42,7 @@ class PowerTag {
   };
   friend class PowerTags;
   std::string name_;
+  uint32 id_;
   std::map<uint32, ScriptFormula> formulas_;
   static uint32 sfid(int id) {
     return 0x41100 + (id % 10) * 0x10 + (id / 10) * 0x100;
@@ -51,7 +53,11 @@ class PowerTag {
     if (it == formulas_.end()) return 0;
     return _get(id, it->second, attr);
   }
+
+  PowerTag() {}
 public:
+  PowerTag(SnoFile<Power>& pow);
+
   AttributeValue operator[](istring const& formula);
   AttributeValue operator[](int id) {
     if (id < 0 || id > 63) return 0;
@@ -68,12 +74,23 @@ public:
   }
   std::string comment(istring const& formula);
   std::string comment(int id) {
-    if (id < 0 || id > 63) return 0;
+    if (id < 0 || id > 63) return "";
     auto it = formulas_.find(sfid(id));
     return (it == formulas_.end() ? "" : it->second.comment);
   }
   std::string const& name() const {
     return name_;
+  }
+  uint32 id() const {
+    return id_;
+  }
+
+  std::vector<uint32> const& formula(istring const& id) const;
+  std::vector<uint32> const& formula(uint32 id) const {
+    static std::vector<uint32> empty;
+    if (id < 0 || id > 63) return empty;
+    auto it = formulas_.find(sfid(id));
+    return (it == formulas_.end() ? empty : it->second.formula);
   }
 
   json::Value dump() const;
@@ -85,26 +102,17 @@ class PowerTags {
   PowerTags(SnoLoader* loader = SnoLoader::primary);
 public:
   static PowerTags& instance(SnoLoader* loader = SnoLoader::primary);
-  static PowerTag* get(istring const& name) {
-    auto& pow = instance().powers_;
-    auto it = pow.find(name);
-    return (it == pow.end() ? nullptr : &it->second);
-  }
+  static PowerTag* get(istring const& name);
   static AttributeValue get(istring const& name, int id, AttributeMap const& attr = {}) {
     return instance()[name].get(id, attr);
   }
   static AttributeValue get(istring const& name, istring const& formula, AttributeMap const& attr = {}) {
     return instance()[name].get(formula, attr);
   }
-  static PowerTag* getraw(uint32 power_id) {
-    auto& raw = instance().raw_;
-    auto it = raw.find(power_id);
-    return (it == raw.end() ? nullptr : it->second);
-  }
+  static PowerTag* getraw(uint32 power_id);
   static AttributeValue getraw(uint32 power_id, uint32 formula_id, AttributeMap const& attr = {}) {
-    auto& raw = instance().raw_;
-    auto it = raw.find(power_id);
-    return (it == raw.end() ? 0 : it->second->getraw(formula_id, attr));
+    PowerTag* power = getraw(power_id);
+    return (power ? power->getraw(formula_id, attr) : 0);
   }
   static double const* table(istring const& name) {
     auto& inst = instance();
@@ -114,8 +122,8 @@ public:
   }
 
   PowerTag& operator[](istring const& name) {
-    auto it = powers_.find(name);
-    return (it == powers_.end() ? nil_ : it->second);
+    PowerTag* pow = get(name);
+    return (pow ? *pow : nil_);
   }
 
   static json::Value dump();

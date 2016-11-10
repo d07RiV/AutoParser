@@ -23,47 +23,68 @@ PowerTags::PowerTags(SnoLoader* loader) {
       }
     }
   }
+}
+
+PowerTag::PowerTag(SnoFile<Power>& pow)
+  : name_(pow.name())
+  , id_(pow->x000_Header.id)
+{
   static uint32 mapOffsets[] = {
     0x008, 0x018, 0x028, 0x050, 0x058, 0x060, 0x068, 0x090, 0x098, 0x0A0, 0x0A8
   };
-  for (auto& pow : loader->all<Power>()) {
-    PowerTag& power = powers_[pow.name()];
-    raw_[pow->x000_Header.id] = &power;
-    power.name_ = pow.name();
-    uint8* base = reinterpret_cast<uint8*>(&pow->x050_PowerDef);
-    using PowerTags = Power::Type::PowerTags;
-    for (uint32 offset : mapOffsets) {
-      uint32 const* data = reinterpret_cast<PowerTags*>(base + offset)->data();
-      uint32 count = *data++;
-      while (count--) {
-        uint32 type = *data++;
-        uint32 id = *data++;
-        if (type != 4) {
-          power.formulas_.emplace(id, (int)*data++);
-        } else {
-          data += 5;
-          uint32 len_name = *data++;
-          data += 1;
-          uint32 len_data = *data++;
-          char const* text = (char*)data;
-          data += (len_name + 3) / 4;
-          len_data = (len_data + 3) / 4;
-          power.formulas_.emplace(
-            std::piecewise_construct,
-            std::forward_as_tuple(id),
-            std::forward_as_tuple(data, data + len_data, text)
+  uint8* base = reinterpret_cast<uint8*>(&pow->x050_PowerDef);
+  using PowerTags = Power::Type::PowerTags;
+  for (uint32 offset : mapOffsets) {
+    uint32 const* data = reinterpret_cast<PowerTags*>(base + offset)->data();
+    uint32 count = *data++;
+    while (count--) {
+      uint32 type = *data++;
+      uint32 id = *data++;
+      if (type != 4) {
+        formulas_.emplace(id, (int) *data++);
+      } else {
+        data += 5;
+        uint32 len_name = *data++;
+        data += 1;
+        uint32 len_data = *data++;
+        char const* text = (char*) data;
+        data += (len_name + 3) / 4;
+        len_data = (len_data + 3) / 4;
+        formulas_.emplace(
+          std::piecewise_construct,
+          std::forward_as_tuple(id),
+          std::forward_as_tuple(data, data + len_data, text)
           );
-          data += len_data;
-        }
-      }
-    }
-    for (size_t sf = 0; sf < pow->x438_ScriptFormulaDetails.size(); ++sf) {
-      auto it = power.formulas_.find(PowerTag::sfid(sf));
-      if (it != power.formulas_.end()) {
-        it->second.comment = pow->x438_ScriptFormulaDetails[sf].x000_Text;
+        data += len_data;
       }
     }
   }
+  for (size_t sf = 0; sf < pow->x438_ScriptFormulaDetails.size(); ++sf) {
+    auto it = formulas_.find(PowerTag::sfid(sf));
+    if (it != formulas_.end()) {
+      it->second.comment = pow->x438_ScriptFormulaDetails[sf].x000_Text;
+    }
+  }
+}
+
+PowerTag* PowerTags::get(istring const& name) {
+  auto& lib = instance().powers_;
+  auto it = lib.find(name);
+  if (it != lib.end()) return &it->second;
+
+  SnoFile<Power> pow(name);
+  if (!pow) return nullptr;
+  it = lib.emplace_hint(it, pow.name(), pow);
+  instance().raw_[pow->x000_Header.id] = &it->second;
+  return &it->second;
+}
+
+PowerTag* PowerTags::getraw(uint32 power_id) {
+  auto& raw = instance().raw_;
+  auto it = raw.find(power_id);
+  if (it != raw.end()) return it->second;
+  char const* name = Power::name(power_id);
+  return (name ? get(name) : nullptr);
 }
 
 PowerTags& PowerTags::instance(SnoLoader* loader) {
@@ -116,6 +137,14 @@ std::string PowerTag::comment(istring const& formula) {
   auto it2 = formulas_.find(it->second);
   return (it2 == formulas_.end() ? "" : it2->second.comment);
 }
+std::vector<uint32> const& PowerTag::formula(istring const& id) const {
+  static std::vector<uint32> empty;
+  auto& tags = PowerTags::instance().tags_;
+  auto it = tags.find(id);
+  if (it == tags.end()) return empty;
+  auto it2 = formulas_.find(it->second);
+  return (it2 == formulas_.end() ? empty : it2->second.formula);
+}
 
 json::Value PowerTag::dump() const {
   auto& rawnames = PowerTags::instance().rawnames_;
@@ -141,12 +170,14 @@ json::Value PowerTag::dump() const {
 }
 
 json::Value PowerTags::dump() {
-  auto& tags = instance().raw_;
   json::Value dst;
-  for (auto& kv : tags) {
-    auto& cur = dst[kv.second->name()];
-    cur["id"] = kv.first;
-    cur["tags"] = kv.second->dump();
+  for (auto const& name : Logger::Loop(SnoLoader::List<Power>())) {
+    PowerTag* power = get(name);
+    if (power) {
+      auto& cur = dst[name];
+      cur["id"] = power->id();
+      cur["tags"] = power->dump();
+    }
   }
   return dst;
 }

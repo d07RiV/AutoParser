@@ -7,36 +7,68 @@
 
 int fixAttrId(int id, bool reverse) {
   static bool fixLoaded = false;
-  typedef std::pair<int, int> fixpair;
-  static std::vector<fixpair> fix_forward;
-  static std::vector<fixpair> fix_reverse;
+  static int fix_forward[2048];
+  static int fix_reverse[2048];
   if (!fixLoaded) {
     fixLoaded = true;
-    SnoFile<GameBalance> gmb("1xx_AffixList");
-    for (auto& affix : gmb->x078_AffixTable) {
-      if (!strcmp(affix.x000_Text, "X1_SplashDamage 1")) {
-        std::string diff = fmtstring("%d", 1331 - affix.x260_AttributeSpecifiers[0].x00_Type);
-        auto const& fix = GameAffixes::rawData()["AffixFix"];
-        if (!fix.has(diff)) throw Exception("unsupported build");
-        for (json::Value const& val : fix[diff]) {
-          fixpair fp(val[0].getInteger(), val[1].getInteger());
-          fix_forward.push_back(fp);
-          fix_reverse.emplace_back(fp.first + fp.second, -fp.second);
+
+    memset(fix_forward, -1, sizeof fix_forward);
+    memset(fix_reverse, -1, sizeof fix_reverse);
+    auto const& fix = GameAffixes::rawData()["AffixFix"];
+    std::map<istring, int> attrList;
+    for (auto const& kv : fix.getMap()) {
+      int index = std::stoi(kv.first);
+      size_t spos = kv.second.getString().find('/');
+      if (spos != std::string::npos) {
+        PowerTag* tag = PowerTags::get(kv.second.getString().substr(0, spos));
+        if (tag) {
+          auto const& formula = tag->formula(kv.second.getString().substr(spos + 1));
+          uint32 const* begin = formula.data();
+          uint32 const* end = begin + formula.size();
+          uint32 x, y, z, w;
+          while (begin < end) {
+            switch (*begin++) {
+            case 1:
+            case 6:
+              ++begin;
+              break;
+            case 5:
+              x = *begin++;
+              y = *begin++;
+              z = *begin++;
+              w = *begin++;
+              if (x == 0) {
+                fix_forward[y] = index;
+                fix_reverse[index] = y;
+                begin = end;
+              }
+              break;
+            case 0:
+              begin = end;
+              break;
+            }
+          }
         }
-        break;
+      } else {
+        attrList[kv.second.getString()] = index;
       }
     }
-  }
-  std::vector<fixpair>& fix = (reverse ? fix_reverse : fix_forward);
-  int result = id;
-  for (fixpair const& fp : fix) {
-    if (id >= fp.first) {
-      result = id + fp.second;
-    } else {
-      break;
+    SnoFile<GameBalance> gmb("1xx_AffixList");
+    for (auto& affix : gmb->x078_AffixTable) {
+      if (attrList.count(affix.x000_Text)) {
+        int lhs = attrList[affix.x000_Text];
+        int rhs = affix.x260_AttributeSpecifiers[0].x00_Type;
+        fix_forward[rhs] = lhs;
+        fix_reverse[lhs] = rhs;
+      }
+    }
+
+    for (int i = 1; i < 2048; ++i) {
+      if (fix_forward[i] < 0) fix_forward[i] = fix_forward[i - 1] + 1;
+      if (fix_reverse[i] < 0) fix_reverse[i] = fix_reverse[i - 1] + 1;
     }
   }
-  return result;
+  return (reverse ? fix_reverse : fix_forward)[id];
 }
 
 bool GameAffixes::isSecondary(uint32 attr) {

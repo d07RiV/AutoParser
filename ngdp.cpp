@@ -48,8 +48,8 @@ namespace NGDP {
       auto& config = result[parts[0]];
       config.build = parts[1];
       config.cdn = parts[2];
-      config.id = std::stoi(parts[3]);
-      config.version = parts[4];
+      config.id = std::stoi(parts[4]);
+      config.version = parts[5];
     }
     return result;
   }

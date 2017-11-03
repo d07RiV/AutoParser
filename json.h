@@ -102,6 +102,7 @@ public:
   void remove(uint32 i);
   Value const& operator[](int i) const;
   Value& operator[](int i);
+  void resize(size_t size);
 
   class Iterator {
     Type type_;

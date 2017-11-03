@@ -54,6 +54,7 @@ string path::ext(string const& path) {
 #include <windows.h>
 #else
 #include <unistd.h>
+#include <dirent.h>
 #endif
 
 namespace path {
@@ -64,6 +65,9 @@ namespace path {
   bool initialized = false;
 
   extern std::vector<std::string> roots;
+#ifdef _MSC_VER
+  extern std::vector<std::string> workdir;
+#endif
 
   Paths& Paths::get() {
     static bool initialized = false;
@@ -86,8 +90,9 @@ namespace path {
 
     char buffer[512];
 #ifdef _MSC_VER
-    GetModuleFileName(GetModuleHandle(NULL), buffer, sizeof buffer);
-    instance.work = path(buffer) / "Work";
+    instance.work = workdir[0];
+    //GetModuleFileName(GetModuleHandle(NULL), buffer, sizeof buffer);
+    //instance.work = path(buffer) / "Work";
     SetCurrentDirectory(instance.work.c_str());
 #else
     readlink("/proc/self/exe", buffer, sizeof buffer);
@@ -119,4 +124,27 @@ string operator / (string const& lhs, string const& rhs) {
   } else {
     return lhs + rhs;
   }
+}
+
+std::vector<std::string> path::listdir(std::string const& path) {
+  std::vector<std::string> res;
+#ifdef _MSC_VER
+  WIN32_FIND_DATA fdata;
+  HANDLE hFind = FindFirstFile((path / "*").c_str(), &fdata);
+  if (hFind == INVALID_HANDLE_VALUE) return res;
+  do {
+    if (fdata.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) continue;
+    res.push_back(fdata.cFileName);
+  } while (FindNextFile(hFind, &fdata));
+  FindClose(hFind);
+#else
+  struct dirent* ent;
+  DIR* dir = opendir(path.c_str());
+  while ((ent = readdir(dir))) {
+    if (ent->d_type & DT_DIR) continue;
+    res.push_back(ent->d_name);
+  }
+  closedir(dir);
+#endif
+  return res;
 }

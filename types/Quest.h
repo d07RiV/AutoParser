@@ -99,30 +99,31 @@ declstruct(Quest::Type) {
     int x10;
     int x14;
     int x18_Enum; // - No Item - = 0, Shared Recipe = 1, Class Recipe = 2, Treasure Class = 3
-    int x1C_Snos[6];
-    int x34_TreasureClassSno;
-    int x38;
+    int x1C_Snos[7];
+    int x38_TreasureClassSno;
     int x3C;
-    int x40_Enum; // - No Item - = 0, Shared Recipe = 1, Class Recipe = 2, Treasure Class = 3
-    int x44_Snos[6];
-    int x5C_TreasureClassSno;
-    int x60;
-    int x64;
-    Sno<Power> x68_PowerSno;
-    int x6C_Snos[2];
-    uint32 x74_;
-    Array<QuestStepObjectiveSet> x78_QuestStepObjectiveSets = x80_SerializeData;
-    SerializeData x80_SerializeData;
-    Array<QuestStepBonusObjectiveSet> x88_QuestStepBonusObjectiveSets = x90_SerializeData;
-    SerializeData x90_SerializeData;
-    Array<QuestStepFailureConditionSet> x98_QuestStepFailureConditionSets = xA0_SerializeData;
-    SerializeData xA0_SerializeData;
+    int x40;
+    int x44_Enum; // - No Item - = 0, Shared Recipe = 1, Class Recipe = 2, Treasure Class = 3
+    int x48_Snos[7];
+    uint32 x60_;
+    int x64_TreasureClassSno;
+    int x68;
+    int x6C;
+    Sno<Power> x70_PowerSno;
+    int x74_Snos[2];
+    Array<QuestStepObjectiveSet> x80_QuestStepObjectiveSets = x88_SerializeData;
+    SerializeData x88_SerializeData;
+    Array<QuestStepBonusObjectiveSet> x90_QuestStepBonusObjectiveSets = x98_SerializeData;
+    SerializeData x98_SerializeData;
+    Array<QuestStepFailureConditionSet> xA0_QuestStepFailureConditionSets = xA8_SerializeData;
+    SerializeData xA8_SerializeData;
     void dumpfunc() {
-      dumpval(x00_Text, x10, x14, x18_Enum, x1C_Snos, x34_TreasureClassSno);
-      dumpval(x38, x3C, x40_Enum, x44_Snos, x5C_TreasureClassSno, x60);
-      dumpval(x64, x68_PowerSno, x6C_Snos, x78_QuestStepObjectiveSets, x88_QuestStepBonusObjectiveSets, x98_QuestStepFailureConditionSets);
+      dumpval(x00_Text, x10, x14, x18_Enum, x1C_Snos, x38_TreasureClassSno);
+      dumpval(x3C, x40, x44_Enum, x48_Snos, x64_TreasureClassSno, x68);
+      dumpval(x6C, x70_PowerSno, x74_Snos, x80_QuestStepObjectiveSets, x90_QuestStepBonusObjectiveSets, xA0_QuestStepFailureConditionSets);
     }
   };
+  structsize(QuestStep, 0xB0);
 
   declstruct(QuestCompletionStep) {
     Text x00_Text = x08_SerializeData;

@@ -217,13 +217,16 @@ SnoCdnLoader::~SnoCdnLoader() {
 
 std::vector<std::string> SnoCdnLoader::builds() {
   auto& ngdp = CdnImpl::get_ngdp();
-  auto& ver = ngdp.version();
-  std::vector<std::string> res;
-  if (!ver.version2.empty() && ver.version2 != ver.version) {
-    res.push_back(ver.version2);
+  //File cdn = ngdp.load(ngdp.version().cdn);
+  //if (!cdn) return std::vector<std::string>();
+  //auto config = NGDP::ParseConfig(cdn);
+  //return split(config["builds"]);
+  std::vector<std::string> result;
+  result.push_back(ngdp.version().build);
+  if (!ngdp.version().build2.empty()) {
+    result.push_back(ngdp.version().build2);
   }
-  res.push_back(ver.version);
-  return res;
+  return result;
 }
 std::string SnoCdnLoader::livebuild() {
   return CdnImpl::get_ngdp().version().build;

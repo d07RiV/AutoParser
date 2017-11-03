@@ -343,6 +343,10 @@
     "name": "Combo 2 Contact Frame Effect Group - Female",
     "tag": "TAG_POWER_COMBO_CONTACT_FRAME_EFFECT_GROUP_FEMALE_2"
   },
+  "264346": {
+    "name": "Cast Target Effect Actor",
+    "tag": "TAG_POWER_CAST_TARGET_CLIENT_EFFECT_ACTOR"
+  },
   "264448": {
     "name": "IsComboPower",
     "tag": "TAG_POWER_IS_COMBO_POWER"
@@ -2531,6 +2535,14 @@
     "name": "LocksActorsWhileSweeping",
     "tag": "TAG_POWER_LOCKS_ACTORS_WHILE_SWEEPING"
   },
+  "328423": {
+    "name": "StickyTargetsActorsWhileSweeping",
+    "tag": "TAG_POWER_STICKY_TARGETS_ACTORS_WHILE_SWEEPING"
+  },
+  "328424": {
+    "name": "StickyTargetRadius",
+    "tag": "TAG_POWER_STICKY_TARGET_RADIUS"
+  },
   "328432": {
     "name": "RequiresTarget",
     "tag": "TAG_POWER_REQUIRES_TARGET"
@@ -2691,6 +2703,10 @@
     "name": "CastTargetAllowDeadTargets",
     "tag": "TAG_POWER_CAST_TARGET_ALLOW_DEAD_TARGETS"
   },
+  "328623": {
+    "name": "CastTargetNecroCorpsesOnly",
+    "tag": "TAG_POWER_CAST_TARGET_NECRO_CORPSES_ONLY"
+  },
   "328624": {
     "name": "Is Physical",
     "tag": "TAG_POWER_IS_PHYSICAL"
@@ -2698,6 +2714,10 @@
   "328632": {
     "name": "Causes Closing Cooldown",
     "tag": "TAG_POWER_CAUSES_CLOSING_COOLDOWN"
+  },
+  "328634": {
+    "name": "TargetNecroCorpsesOnly",
+    "tag": "TAG_POWER_TARGET_NECRO_CORPSES_ONLY"
   },
   "328640": {
     "name": "Special Death Chance Rune A",
@@ -2918,6 +2938,14 @@
   "329698": {
     "name": "Recharge Time",
     "tag": "TAG_POWER_RECHARGE_TIME"
+  },
+  "329699": {
+    "name": "Health Cost Per Target",
+    "tag": "TAG_POWER_COST_HEALTH_PER_TARGET"
+  },
+  "329700": {
+    "name": "CannotActivate",
+    "tag": "TAG_POWER_CANNOT_ACTIVATE"
   },
   "329744": {
     "name": "Escape Attack Radius",
@@ -4663,6 +4691,10 @@
     "name": "Faith Generation Bonus Percent",
     "tag": "TAG_POWER_FAITH_GENERATION_BONUS_PERCENT"
   },
+  "700437": {
+    "name": "Essence Generation Bonus Percent",
+    "tag": "TAG_POWER_ESSENCE_GENERATION_BONUS_PERCENT"
+  },
   "700448": {
     "name": "Bonus Healing Received Percent",
     "tag": "TAG_POWER_BONUS_HEALING_RECEIVED_PERCENT"
@@ -4790,6 +4822,22 @@
   "717568": {
     "name": "Apply Passive After Item Passives",
     "tag": "TAG_POWER_APPLY_PASSIVE_AFTER_ITEM_PASSIVES"
+  },
+  "717824": {
+    "name": "Highlights for Necro Corpses",
+    "tag": "TAG_POWER_NECRO_CORPSE_HIGHLIGHT_CORPSES"
+  },
+  "717825": {
+    "name": "Necromancer Corpse Search Radius Around Cursor",
+    "tag": "TAG_POWER_NECRO_CORPSE_SEARCH_RADIUS_AROUND_CURSOR"
+  },
+  "717826": {
+    "name": "Necromancer Corpse Search Radius Around Self",
+    "tag": "TAG_POWER_NECRO_CORPSE_SEARCH_RADIUS_AROUND_SELF"
+  },
+  "717827": {
+    "name": "Power Fails If No Corpses Available",
+    "tag": "TAG_POWER_NECRO_CORPSE_FAILS_IF_NO_CORPSES_AVAILABLE"
   },
   "720896": {
     "name": "Death Portal Actor 0",

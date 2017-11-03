@@ -198,7 +198,7 @@ declstruct(Actor::Type) {
   float x2C4;
   float x2C8;
   ActorCollisionData x2CC_ActorCollisionData;
-  InventoryImages x310_InventoryImages[6];
+  InventoryImages x310_InventoryImages[7];
   int x340;
   uint32 x344_;
   Text x348_Text = x350_SerializeData;
@@ -213,5 +213,6 @@ declstruct(Actor::Type) {
     dumpval(x348_Text, x358_Text);
   }
 };
+structsize(Actor::Type, 0x370);
 
 #pragma pack(pop)

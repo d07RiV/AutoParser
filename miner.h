@@ -16,11 +16,17 @@
 #pragma once
 #include "types/GameBalance.h"
 #include "types/Power.h"
+#include "affixes.h"
 #include "json.h"
 #include <set>
 #include <algorithm>
 
-void parseItem(GameBalance::Type::Item const& item, json::Value& to, bool html);
+struct ItemInfo {
+  std::vector<AttributeSpecifier> attrs;
+  int elemental = 0;
+};
+
+ItemInfo parseItem(GameBalance::Type::Item const& item, json::Value& to, bool html, bool lis = false);
 void parseSetBonus(GameBalance::Type::SetItemBonusTableEntry const& bonus, json::Value& to, bool html);
 void parsePower(Power::Type const& power, json::Value& to, bool html);
 

@@ -7,7 +7,7 @@
 
 declstruct(Conversation::Type) {
   declstruct(ConvLocaleDisplayTimes) {
-    int x00_int[12];
+    int x00_int[14];
     void dumpfunc() {
       dumpval(x00_int);
     }
@@ -25,27 +25,28 @@ declstruct(Conversation::Type) {
     int x020;
     int x024;
     ConvLocaleDisplayTimes x028_ConvLocaleDisplayTimes[19];
-    int x3B8;
-    int x3BC_Enum; // - None - = -1, Equal To = 0, Less Than = 1, Greater Than = 2, Less Than Or Equal To = 3, Greater Than Or Equal To = 4, Not Equal To = 5
-    int x3C0;
-    int x3C4;
-    int x3C8_Enum; // - None - = -1, Incremented By = 0, Decremented By = 1, Set To = 2
-    int x3CC;
-    int x3D0;
-    int x3D4;
-    Array<ConversationTreeNode> x3D8_ConversationTreeNodes = x3E0_SerializeData;
-    SerializeData x3E0_SerializeData;
-    Array<ConversationTreeNode> x3E8_ConversationTreeNodes = x3F0_SerializeData;
-    SerializeData x3F0_SerializeData;
-    Array<ConversationTreeNode> x3F8_ConversationTreeNodes = x400_SerializeData;
-    SerializeData x400_SerializeData;
+    int x450;
+    int x454_Enum; // - None - = -1, Equal To = 0, Less Than = 1, Greater Than = 2, Less Than Or Equal To = 3, Greater Than Or Equal To = 4, Not Equal To = 5
+    int x458;
+    int x45C;
+    int x460_Enum; // - None - = -1, Incremented By = 0, Decremented By = 1, Set To = 2
+    int x464;
+    int x468;
+    int x46C;
+    Array<ConversationTreeNode> x470_ConversationTreeNodes = x478_SerializeData;
+    SerializeData x478_SerializeData;
+    Array<ConversationTreeNode> x480_ConversationTreeNodes = x488_SerializeData;
+    SerializeData x488_SerializeData;
+    Array<ConversationTreeNode> x490_ConversationTreeNodes = x498_SerializeData;
+    SerializeData x498_SerializeData;
     void dumpfunc() {
       dumpval(x000, x004, x008, x00C_Enum, x010_Enum, x014);
-      dumpval(x018_Time, x01C, x020, x024, x028_ConvLocaleDisplayTimes, x3B8);
-      dumpval(x3BC_Enum, x3C0, x3C4, x3C8_Enum, x3CC, x3D0);
-      dumpval(x3D4, x3D8_ConversationTreeNodes, x3E8_ConversationTreeNodes, x3F8_ConversationTreeNodes);
+      dumpval(x018_Time, x01C, x020, x024, x028_ConvLocaleDisplayTimes, x450);
+      dumpval(x454_Enum, x458, x45C, x460_Enum, x464, x468);
+      dumpval(x46C, x470_ConversationTreeNodes, x480_ConversationTreeNodes, x490_ConversationTreeNodes);
     }
   };
+  structsize(ConversationTreeNode, 0x4A0);
 
   SnoHeader x000_Header;
   int x00C_Enum; // Quest Event = 13, Quest Float = 12, Quest Standard = 11, Talk Menu Gossip = 10, Ambient Gossip = 9, Lore Book = 8, Global Float = 7, Global Chatter = 6, Player Callout = 5, Follower Callout = 4, Follower Banter = 3, Ambient Float = 2, Player Emote = 1, Follower Soundset = 0
@@ -82,5 +83,6 @@ declstruct(Conversation::Type) {
     dumpval(x0BC, x0C0_ConversationTreeNodes, x0D0_byte, x108_BossEncounterSno, x10C);
   }
 };
+structsize(Conversation::Type, 0x110);
 
 #pragma pack(pop)

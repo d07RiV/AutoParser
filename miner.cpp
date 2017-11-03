@@ -64,7 +64,7 @@ struct FormatData {
 
     for (auto& actor : SnoLoader::All<Actor>()) {
       std::string icons = "";
-      for (int i = 0; i < 6; ++i) {
+      for (int i = 0; i < 7; ++i) {
         if (i) icons.push_back(',');
         icons.append(fmtstring("%u,%u",
           actor->x310_InventoryImages[i].x00,
@@ -89,13 +89,14 @@ int PowerAttribute() {
   return attr;
 }
 
-void parseItem(GameBalance::Type::Item const& item, json::Value& to, bool html) {
+ItemInfo parseItem(GameBalance::Type::Item const& item, json::Value& to, bool html, bool lis) {
   FormatData& stl = FormatData::get();
   std::string id = item.x000_Text;
-  if (!stl.items.has(id)) return;
+  ItemInfo itemInfo;
+  if (!stl.items.has(id)) return itemInfo;
   json::Value& dst = to[id];
 
-  std::vector<AttributeSpecifier> attrs[2];
+  std::vector<AttributeSpecifier> attrs[3];
   std::set<uint32> powers;
   for (auto& attr : item.x1F8_AttributeSpecifiers) {
     if (attr.x00_Type != -1) {
@@ -119,16 +120,16 @@ void parseItem(GameBalance::Type::Item const& item, json::Value& to, bool html) 
       }
     }
   }
-  if (item.x4B8_AttributeSpecifier.x00_Type != -1) {
-    attrs[GameAffixes::isSecondary(item.x4B8_AttributeSpecifier.x00_Type)].emplace_back(item.x4B8_AttributeSpecifier);
-    if (item.x4B8_AttributeSpecifier.x00_Type == PowerAttribute()) {
-      powers.insert(item.x4B8_AttributeSpecifier.x04_Param);
+  if (item.x4C0_AttributeSpecifier.x00_Type != -1) {
+    attrs[GameAffixes::isSecondary(item.x4C0_AttributeSpecifier.x00_Type)].emplace_back(item.x4C0_AttributeSpecifier);
+    if (item.x4C0_AttributeSpecifier.x00_Type == PowerAttribute()) {
+      powers.insert(item.x4C0_AttributeSpecifier.x04_Param);
     }
   }
-  if (item.x4D0_AttributeSpecifier.x00_Type != -1) {
-    attrs[GameAffixes::isSecondary(item.x4D0_AttributeSpecifier.x00_Type)].emplace_back(item.x4D0_AttributeSpecifier);
-    if (item.x4D0_AttributeSpecifier.x00_Type == PowerAttribute()) {
-      powers.insert(item.x4D0_AttributeSpecifier.x04_Param);
+  if (item.x4D8_AttributeSpecifier.x00_Type != -1) {
+    attrs[GameAffixes::isSecondary(item.x4D8_AttributeSpecifier.x00_Type)].emplace_back(item.x4D8_AttributeSpecifier);
+    if (item.x4D8_AttributeSpecifier.x00_Type == PowerAttribute()) {
+      powers.insert(item.x4D8_AttributeSpecifier.x04_Param);
     }
   }
 
@@ -167,25 +168,50 @@ void parseItem(GameBalance::Type::Item const& item, json::Value& to, bool html) 
   if (stl.itemFlavor.has(id)) {
     dst["flavor"] = stl.itemFlavor[id];
   }
-  for (int type = 0; type < 2; ++type) {
+  for (size_t i = 0; i < attrs[1].size(); ++i) {
+    if (attrs[1][i].type == static_cast<uint32>(PowerAttribute())) {
+      attrs[2].push_back(attrs[1][i]);
+      attrs[1].erase(attrs[1].begin() + i--);
+    }
+  }
+  for (int itype = 0; itype < 3; ++itype) {
+    int type = ((itype * 2) % 3);
     auto bonuses = GameAffixes::format(attrs[type], html ? FormatHTML : FormatNone);
+    for (auto const& attr : attrs[type]) {
+      int id = fixAttrId(attr.type);
+      if (((id >= 209 && id <= 241) || id == 367) && attr.param > 0) {
+        itemInfo.elemental = attr.param;
+      }
+      itemInfo.attrs.push_back(attr);
+    }
     if (bonuses.empty()) continue;
     auto& attrDst = dst[type ? "secondary" : "primary"];
     for (auto& str : bonuses) {
-      attrDst.append(str);
+      attrDst.append(lis ? "<li class=\"d3-color-" + std::string(type == 2 ? "orange" : "blue") + " d3-item-property-default\"><p>" + str + "</p></li>" : str);
     }
   }
   for (int group = 0; group < 6; ++group) {
-    uint32 groupId = (&item.x3E4_AffixGroupGameBalanceId)[group];
+    uint32 groupId = (&item.x3E8_AffixGroupGameBalanceId)[group];
     if (groupId == -1U) continue;
     auto values = GameAffixes::getGroup(groupId, item.x10C_ItemTypesGameBalanceId);
     if (values.empty()) continue;
+    for (size_t i = 0; i < AffixValue::MaxAttributes; ++i) {
+      if (values[0].attributes[i].type != -1U) {
+        if (values.size() == 1) {
+          int id = fixAttrId(values[0].attributes[i].type);
+          if (((id >= 209 && id <= 241) || id == 367) && values[0].attributes[i].param > 0) {
+            itemInfo.elemental = values[0].attributes[i].param;
+          }
+        }
+        itemInfo.attrs.push_back(values[0].attributes[i]);
+      }
+    }
     bool secondary = GameAffixes::isSecondary(values[0].attributes[0].type);
     auto& attrDst = dst[secondary ? "secondary" : "primary"];
     if (values.size() == 1) {
       auto effects = values[0].format(html ? FormatHTML : FormatNone);
       for (auto& str : effects) {
-        attrDst.append(str);
+        attrDst.append(lis ? "<li class=\"d3-color-blue d3-item-property-default\"><p>" + str + "</p></li>" : str);
       }
       continue;
     }
@@ -193,15 +219,34 @@ void parseItem(GameBalance::Type::Item const& item, json::Value& to, bool html) 
     for (auto& value : values) {
       auto effects = value.format(html ? FormatHTML : FormatNone);
       if (!effects.empty()) {
-        groupVal.append(join(effects, " and "));
+        if (lis) {
+          groupVal.append("<li><span class=\"d3-color-blue\"><p>" + join(effects, " and ") + "</p></span></li>");
+        } else {
+          groupVal.append(join(effects, " and "));
+        }
       }
     }
     if (groupVal.length()) {
       attrDst.append(groupVal);
     }
   }
-  if (item.x128) dst["primary"].append(fmtstring("+%d Random Magic Properties", item.x128));
-  if (item.x12C) dst["secondary"].append(fmtstring("+%d Random Magic Properties", item.x12C));
+  char const* fmt_rand = "+%d Random Magic Properties";
+  if (lis) fmt_rand = "<li class=\"d3-color-blue\">+%d Random Magic Properties</li>";
+  if (item.x128) dst["primary"].append(fmtstring(fmt_rand, item.x128));
+  if (item.x12C) dst["secondary"].append(fmtstring(fmt_rand, item.x12C));
+
+  dst["drop_level"] = item.x14C;
+  dst["drop_weight"] = item.x3C4;
+  static std::vector<std::string> classList{ "Demon Hunter", "Barbarian", "Wizard", "Witchdoctor", "Monk", "Crusader", "Necromancer" };
+  json::Value dropClass;
+  for (int i = 0; i < 7; ++i) {
+    if ((&item.x3C8)[i]) {
+      dropClass.append(classList[i]);
+    }
+  }
+  dst["drop_classes"] = dropClass;
+
+  return itemInfo;
 }
 
 void parseSetBonus(GameBalance::Type::SetItemBonusTableEntry const& bonus, json::Value& to, bool html) {
@@ -512,6 +557,16 @@ std::vector<std::string> mergeKeys(json::Value const& lhs, json::Value const& rh
 void diff(File& file, json::Value const& lhs, json::Value const& rhs, std::vector<std::string> const& order, bool links) {
   json::Value lhs_trim = lhs;
   json::Value rhs_trim = rhs;
+  for (auto& kv : lhs_trim) {
+    if (kv.has("icon")) {
+      kv.remove("icon");
+    }
+  }
+  for (auto& kv : rhs_trim) {
+    if (kv.has("icon")) {
+      kv.remove("icon");
+    }
+  }
   jsonCompare(lhs_trim, rhs_trim);
   auto keys = mergeKeys(lhs_trim, rhs_trim);
 

@@ -65,7 +65,7 @@ namespace NGDP {
     if (app == "d3") {
       auto v2 = GetVersions("d3t");
       if (v2.count(region)) {
-        version_.version2 = v2[region].version;
+        version_.build2 = v2[region].build;
       }
     }
   }
@@ -338,10 +338,10 @@ namespace NGDP {
         }
       }
 
-      File mask(path::work() / CACHE / "data" / archives[i] + ".mask");
-      if (mask) {
-        archives_[i].mask.resize(mask.size());
-        mask.read(&archives_[i].mask[0], archives_[i].mask.size());
+      File map(path::work() / CACHE / "data" / archives[i] + ".map");
+      if (map) {
+        archives_[i].map.resize(map.size() / sizeof(uint32));
+        map.read(&archives_[i].map[0], archives_[i].map.size() * sizeof(uint32));
       }
     }
     Logger::end();
@@ -356,11 +356,11 @@ namespace NGDP {
     uint32 size = it->second.size;
     uint32 blockStart = offset / blockSize_;
     uint32 blockEnd = (offset + size + blockSize_ - 1) / blockSize_;
-    auto& mask = archives_[it->second.index].mask;
+    auto& map = archives_[it->second.index].map;
     uint32 getStart = blockEnd;
     uint32 getEnd = blockStart;
     for (uint32 i = blockStart; i < blockEnd; ++i) {
-      if (i / 8 >= mask.size() || !(mask[i / 8] & (1 << (i & 7)))) {
+      if (i >= map.size() || map[i] == ArchiveInfo::INVALID) {
         getStart = std::min(getStart, i);
         getEnd = std::max(getEnd, i + 1);
       }
@@ -377,38 +377,52 @@ namespace NGDP {
       File archive = File(archivePath, "rb+");
       if (!archive) archive = File(archivePath, "wb+");
       if (headers.count("Content-Range")) {
-        unsigned int start, end, total;
+        uint32 start, end, total, bstart, bend;
         if (sscanf(headers["Content-Range"].c_str(), "bytes %u-%u/%u", &start, &end, &total) != 3) {
           return File();
         }
-        if (archive.size() < total) {
-          archive.seek(total - 1, SEEK_SET);
-          archive.putc(0);
-        }
-        archive.seek(start, SEEK_SET);
-        archive.copy(result, end - start + 1);
-        start = (start + blockSize_ - 1) / blockSize_;
+        bstart = (start + blockSize_ - 1) / blockSize_;
         if (end >= total - 1) {
-          end = (end + blockSize_) / blockSize_;
+          bend = (total + blockSize_ - 1) / blockSize_;
         } else {
-          end = (end + 1) / blockSize_;
+          bend = (end + 1) / blockSize_;
         }
-        total = (total + blockSize_ - 1) / blockSize_;
-        mask.resize((total + 7) / 8, 0);
-        for (uint32 i = start; i < end; ++i) {
-          mask[i / 8] |= (1 << (i & 7));
+        map.resize((total + blockSize_ - 1) / blockSize_, ArchiveInfo::INVALID);
+        size_t filepos = archive.size();
+        archive.seek(filepos, SEEK_SET);
+        for (size_t i = bstart; i < bend; ++i) {
+          if (map[i] == ArchiveInfo::INVALID) {
+            map[i] = filepos;
+            size_t size = std::min<size_t>(blockSize_, total - i * blockSize_);
+            result.seek(i * blockSize_ - start, SEEK_SET);
+            archive.copy(result, size);
+            filepos += size;
+          }
         }
-        File(path::work() / CACHE / "data" / archives_[it->second.index].name + ".mask", "wb").write(&mask[0], mask.size());
+        File(path::work() / CACHE / "data" / archives_[it->second.index].name + ".map", "wb").write(&map[0], map.size() * sizeof(uint32));
       } else {
         archive.copy(result);
+        size_t size = result.size();
+        size_t blocks = (size + blockSize_ - 1) / blockSize_;
+        map.resize(blocks);
+        for (size_t i = 0; i < blocks; ++i) {
+          map[i] = i * blockSize_;
+        }
+        File(path::work() / CACHE / "data" / archives_[it->second.index].name + ".map", "wb").write(&map[0], map.size() * sizeof(uint32));
       }
     }
 
     File data(archivePath);
     if (!data) return File();
     MemoryFile result;
-    data.seek(offset, SEEK_SET);
-    data.read(result.reserve(size), size);
+    uint8* output = result.reserve(size);
+    for (uint32 i = blockStart; i < blockEnd; ++i) {
+      if (map[i] == ArchiveInfo::INVALID) continue;
+      uint32 curstart = std::max<uint32>(offset, i * blockSize_);
+      uint32 curend = std::min<uint32>(offset + size, i * blockSize_ + blockSize_);
+      data.seek(map[i] + curstart - i * blockSize_, SEEK_SET);
+      data.read(output + curstart - offset, curend - curstart);
+    }
     result.seek(0);
     return result;
   }

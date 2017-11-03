@@ -30,7 +30,8 @@
 
 namespace path {
 #ifdef _MSC_VER
-  std::vector<std::string> roots{ "C:/Work/junk/public_html" };
+  std::vector<std::string> roots{ "C:\\Work\\d3p\\Root" };
+  std::vector<std::string> workdir{ "C:\\Work\\d3p\\Work" };
 #else
   std::vector<std::string> roots { "/home/d3planner/public_html" };
 #endif
@@ -46,6 +47,7 @@ void make_menu(File& mf, json::Value lhs, json::Value rhs) {
     { "WitchDoctor", "Witch Doctor" },
     { "Wizard", "Wizard" },
     { "X1_Crusader", "Crusader" },
+    { "Necromancer", "Necromancer" },
     { "Templar", "Templar" },
     { "Scoundrel", "Scoundrel" },
     { "Enchantress", "Enchantress" },
@@ -133,6 +135,48 @@ void write_icon(Archive& dsticons, GameBalance::Type::Item const& item) {
 
 static json::Value versions;
 
+template<class T>
+std::vector<uint8> dump_bin(std::string const& name, uint32* usize = nullptr) {
+  File src = SnoLoader::Load<T>(name);
+  if (!src) return std::vector<uint8>();
+  MemoryFile mem;
+  json::WriterVisitor writer(mem);
+  writer.setIndent(2);
+  T::parse(src, &writer);
+  writer.onEnd();
+  std::vector<uint8> buf(mem.size());
+  uint32 size = mem.size();
+  gzencode(mem.data(), mem.size(), buf.data(), &size);
+  buf.resize(size);
+  if (usize) *usize = mem.size();
+  return buf;
+}
+
+template<class T>
+void dump_bin(File out) {
+  uint32 count = SnoLoader::List<T>().size();
+  std::vector<std::vector<uint8>> files;
+  out.write32(count);
+  uint32 total = 4 + (12 + 64) * count;
+  for (std::string name : Logger::Loop(SnoLoader::List<T>(), fmtstring("Dumping %s", T::type()).c_str())) {
+    uint32 usize;
+    files.push_back(dump_bin<T>(name, &usize));
+    out.write32(total);
+    out.write32(usize);
+    out.write32(files.back().size());
+    name.resize(64, 0);
+    out.write(name.data(), 64);
+    total += files.back().size();
+  }
+  for (auto const& file : files) {
+    out.write(file.data(), file.size());
+  }
+}
+
+void OpGmb(uint32 build) {
+  dump_bin<GameBalance>(File(fmtstring("GameBalance.%d.gz", build), "wb"));
+}
+
 void OpExtract(uint32 build) {
   std::string suffix = fmtstring(".%d.js", build);
   json::Value js_sets;
@@ -183,13 +227,364 @@ void OpDumpPowers(uint32 build) {
   out.printf(";");
 }
 
+
+static std::map<std::string, std::string> slotSizes{
+  {"head", "default"},
+  {"shoulders", "default"},
+  {"neck", "square"},
+  {"torso", "big"},
+  {"waist", "square"},
+  {"hands", "default"},
+  {"wrists", "default"},
+  {"legs", "default"},
+  {"feet", "default"},
+  {"finger", "square"},
+  {"onehand", "default"},
+  {"twohand", "default"},
+  {"offhand", "default"},
+  {"follower", "square"},
+  {"custom", "square"},
+  {"customwpn", "square"},
+};
+
+static std::map<std::string, int> classToIcon{
+  {"demonhunter", 0},
+  {"barbarian", 2},
+  {"wizard", 4},
+  {"witchdoctor", 6},
+  {"monk", 8},
+  {"crusader", 10},
+  {"necromancer", 12},
+};
+
+static std::vector<std::string> bgEffects{ "physical", "fire", "lightning", "cold", "poison", "arcane", "holy" };
+
+static std::string getItemIcon(json::Value const& icons, GameBalance::Type::Item const* item) {
+  auto icon = icons[item->x000_Text][1];
+  std::string base = "http://www.d3planner.com/webgl/icons/";
+  if (icon.type() == json::Value::tNumber || icon.type() == json::Value::tInteger) {
+    return base + fmtstring("%.0f", icon.getNumber());
+  } else {
+    uint32 idxClass = 0;
+    while (idxClass < 7 && !(&item->x3C8)[idxClass]) {
+      ++idxClass;
+    }
+    if (idxClass >= 7) idxClass = 0;
+    uint32 idxGender = (idxClass == 0 || idxClass == 2 ? 1 : 0);
+    idxClass *= 2;
+    double iconIndex = 0;
+    if (icon.type() == json::Value::tArray) {
+      if (icon.length() > idxClass + idxGender) iconIndex = icon[idxClass + idxGender].getNumber();
+      else if (icon.length() > idxClass) iconIndex = icon[idxClass].getNumber();
+      else if (icon.length() > idxGender) iconIndex = icon[idxGender].getNumber();
+      else iconIndex = icon[0].getNumber();
+    } else if (icon.type() == json::Value::tObject) {
+      if (icon.has(fmtstring("%d", idxClass + idxGender))) iconIndex = icon[fmtstring("%d", idxClass + idxGender)].getNumber();
+      else if (icon.has(fmtstring("%d", idxClass))) iconIndex = icon[fmtstring("%d", idxClass)].getNumber();
+      else if (icon.has(fmtstring("%d", idxGender))) iconIndex = icon[fmtstring("%d", idxGender)].getNumber();
+      else iconIndex = icon["0"].getNumber();
+    }
+    return base + fmtstring("%.0f", iconIndex);
+  }
+}
+
+void OpKadala(uint32 build) {
+  static re::Prog re_sockets(R"(Sockets \((\d+)\))");
+  static re::Prog re_random(R"(\+(\d+) Random Magic Properties)");
+  static std::map<uint32, std::vector<GameBalance::Type::Item*>> itemSets;
+  static json::Value setData;
+  static re::Prog getname(R"((.*) \([0-9]+\))");
+  static std::vector<std::string> classList{ "demonhunter", "barbarian", "wizard", "witchdoctor", "monk", "crusader", "necromancer" };
+
+  json::Value input, output, icons;
+  json::parse(File("item_data.js"), input, json::mJS);
+  json::parse(File("item_icons.js"), icons, json::mJS);
+  json::parse(File("kadala_src.js"), output, json::mJS);
+  auto names = Strings::list("Items");
+  auto limits = input["statLimits"]["legendary"];
+  for (auto& kv : ItemLibrary::all()) {
+    std::string id = kv.first;
+    auto* item = kv.second;
+    if (!item->x3C4) continue;
+
+    std::string type = GameAffixes::getItemType(item->x10C_ItemTypesGameBalanceId.id);
+    if (!input["itemTypes"].has(type)) continue;
+    auto typeInfo = input["itemTypes"][type];
+
+    json::Value& dst = output["Items"][id];
+    dst["icon"] = icons[id][0].getInteger();
+    dst["level"] = item->x14C;
+    dst["weight"] = item->x3C4;
+    dst["name"] = names[id];
+    dst["type"] = type;
+    if (item->x110_Bit18) dst["hardcore"] = true;
+    int total_classes = 0;
+    int last_class = 0;
+    for (int i = 0; i < 7; ++i) {
+      if ((&item->x3C8)[i]) {
+        ++total_classes;
+        last_class = i;
+        dst[classList[i]] = true;
+      }
+    }
+
+    json::Value parsed;
+    auto info = parseItem(*item, parsed, true, true);
+    parsed = parsed[id];
+
+    std::string itemClass;
+    if (total_classes == 1) {
+      itemClass = classList[last_class];
+    } else if (typeInfo.has("class")) {
+      itemClass = typeInfo["class"].getString();
+    }
+    std::string itemSlot = typeInfo["slot"].getString();
+    std::string slotName;
+    if (input["metaSlots"].has(itemSlot)) {
+      slotName = input["metaSlots"][itemSlot]["name"].getString();
+    } else {
+      slotName = input["itemSlots"][itemSlot]["name"].getString();
+    }
+
+    std::string color = (item->x170_SetItemBonusesGameBalanceId.id == -1U ? "orange" : "green");
+    std::string effect = "";// effect - bg effect - bg - holy";
+    if (info.elemental && static_cast<size_t>(info.elemental) < bgEffects.size() && slotSizes[itemSlot] != "square") {
+      effect = " effect-bg effect-bg-" + bgEffects[info.elemental];
+    } else if (typeInfo["required"].has("basearmor")) {
+      effect = " effect-bg effect-bg-armor";
+      if (slotSizes[itemSlot] != "default") {
+        effect += " effect-bg-armor-" + slotSizes[itemSlot];
+      }
+    }
+
+    std::string tooltip = "<div class=\"d3-tooltip d3-tooltip-item\"><div class=\"d3-tooltip-item-wrapper d3-tooltip-item-wrapper-Legendary\">"
+      "<div class=\"d3-tooltip-item-border d3-tooltip-item-border-left\"></div><div class=\"d3-tooltip-item-border d3-tooltip-item-border-right\">"
+      "</div><div class=\"d3-tooltip-item-border d3-tooltip-item-border-top\"></div><div class=\"d3-tooltip-item-border d3-tooltip-item-border-bottom\">"
+      "</div><div class=\"d3-tooltip-item-border d3-tooltip-item-border-top-left\"></div><div class=\"d3-tooltip-item-border d3-tooltip-item-border-top-right\">"
+      "</div><div class=\"d3-tooltip-item-border d3-tooltip-item-border-bottom-left\"></div><div class=\"d3-tooltip-item-border d3-tooltip-item-border-bottom-right\">"
+      "</div><div class=\"tooltip-head tooltip-head-orange\">";
+    tooltip += "<h3 class=\"d3-color-" + color + "\">";
+    tooltip += names[id];
+    tooltip += "</h3></div><div class=\"tooltip-body" + effect + "\"><span class=\"d3-icon d3-icon-item d3-icon-item-large  d3-icon-item-" + color + "\">"
+      "<span class=\"icon-item-gradient\"><span class=\"icon-item-inner icon-item-" + slotSizes[itemSlot] + "\" "
+      "style=\"background-image: url(" + getItemIcon(icons, item) + ");\">"
+      "</span></span></span><div class=\"d3-item-properties\"><ul class=\"item-type-right\">";
+    tooltip += "<li class=\"item-slot\">" + slotName + "</li>";
+    if (itemClass.size()) {
+      tooltip += "<li class=\"item-class-specific d3-color-white\">" + input["classes"][itemClass]["name"].getString() + "</li>";
+    }
+    tooltip += "</ul><ul class=\"item-type\"><li><span class=\"d3-color-" + color += "\">";
+    tooltip += (item->x170_SetItemBonusesGameBalanceId.id == -1U ? "Legendary " : "Set ") + typeInfo["name"].getString();
+    tooltip += "</span></li></ul>";
+    if (typeInfo["required"].has("basearmor")) {
+      auto armor = limits[typeInfo["required"]["basearmor"].getString()];
+      int min = armor["min"].getInteger();
+      int max = armor["max"].getInteger();
+      for (auto const& attr : info.attrs) {
+        if (fixAttrId(attr.type) == 34 || fixAttrId(attr.type) == 35) {
+          min += attr.value.min;
+          max += attr.value.max;
+        }
+      }
+      std::string armorStr = (min < max ? fmtstring("%d &#x2013; %d", min, max) : fmtstring("%d", min));
+      tooltip += "<ul class=\"item-armor-weapon item-armor-armor\"><li class=\"big\"><p><span class=\"value\">" + armorStr + "</span></p></li><li>Armor</li></ul>";
+    }
+    if (typeInfo.has("weapon")) {
+      double speed = typeInfo["weapon"]["speed"].getNumber();
+      int min_min = typeInfo["weapon"]["min"].getInteger(), min_max = min_min;
+      int delta_min = typeInfo["weapon"]["max"].getInteger() - min_min, delta_max = delta_min;
+      double damage_min = 0, damage_max = 0;
+      double speed_min = 0, speed_max = 0;
+      for (auto const& attr : info.attrs) {
+        int id = fixAttrId(attr.type);
+        if (id == 211 || id == 228 || id == 235 || id == 234) {
+          min_min += attr.value.min;
+          min_max += attr.value.max;
+        } else if (id == 209 || id == 219 || id == 227 || id == 226) {
+          delta_min += attr.value.min;
+          delta_max += attr.value.max;
+        } else if (id == 238) {
+          damage_min += attr.value.min;
+          damage_max += attr.value.max;
+        } else if (id == 200) {
+          speed_min += attr.value.min;
+          speed_max += attr.value.max;
+        }
+      }
+      double fin_speed_min = speed * (1.00 + speed_min), fin_speed_max = speed * (1.00 + speed_max);
+      double fin_min_min = min_min * (1.00 + damage_min), fin_min_max = min_max * (1.00 + damage_max);
+      double fin_max_min = (min_min + delta_min) * (1.00 + damage_min), fin_max_max = (min_max + delta_max) * (1.00 + damage_max);
+      std::string cls = "big";
+      std::string dps = fmtstring("%.1f", (fin_min_min + fin_max_min) * fin_speed_min * 0.5);
+      if (fin_min_max > fin_min_min || fin_max_max > fin_max_min || fin_speed_max > fin_speed_min) {
+        cls = "med";
+        dps += fmtstring("&#x2013;%.1f", (fin_min_max + fin_max_max) * fin_speed_max * 0.5);
+      }
+      std::string txt_min = (fin_min_max > fin_min_min ? fmtstring("(%.0f&#x2013;%.0f)", fin_min_min, fin_min_max) : fmtstring("%.0f", fin_min_min));
+      std::string txt_max = (fin_max_max > fin_max_min ? fmtstring("(%.0f&#x2013;%.0f)", fin_max_min, fin_max_max) : fmtstring("%.0f", fin_max_min));
+      std::string txt_speed = (fin_speed_max > fin_speed_min ? fmtstring("%.2f&#x2013;%.2f", fin_speed_min, fin_speed_max) : fmtstring("%.2f", fin_speed_min));
+
+      tooltip += "<ul class=\"item-armor-weapon item-weapon-dps\"><li class=\"" + cls + "\"><span class=\"value\">" + dps + "</span></li><li>Damage Per Second</li></ul>";
+      tooltip += "<ul class=\"item-armor-weapon item-weapon-damage\"><li><p><span class=\"value\">" + txt_min +
+        "</span>&#x2013;<span class=\"value\">" + txt_max + "</span> <span class=\"d3-color-FF888888\">Damage</span></p></li>"
+        "<li><p><span class=\"value\">" + txt_speed + "</span> <span class=\"d3-color-FF888888\">Attacks per Second</span></p></li></ul>";
+    }
+    if (typeInfo["required"].has("baseblock") && typeInfo["required"].has("blockamount")) {
+      auto block = limits[typeInfo["required"]["baseblock"].getString()];
+      auto amount = limits[typeInfo["required"]["blockamount"].getString()];
+      double block_min = block["min"].getNumber();
+      double block_max = block["max"].getNumber();
+      for (auto const& attr : info.attrs) {
+        if (fixAttrId(attr.type) == 260) {
+          block_min += attr.value.min;
+          block_max += attr.value.max;
+        }
+      }
+      std::string str_block = (block_min < block_max ? fmtstring("%.1f&#x2013;%.1f", block_min, block_max) : fmtstring("%.1f", block_min));
+      std::string str_amount = fmtstring("<span class=\"value\">(%d&#x2013;%d)</span>&#x2013;<span class=\"value\">(%d&#x2013;%d)</span>",
+        amount["min"].getInteger(), amount["max"].getInteger(), amount["min2"].getInteger(), amount["max2"].getInteger());
+      tooltip += "<ul class=\"item-armor-weapon item-armor-shield\"><li><p><span class=\"value\">+" + str_block +
+        "%</span> <span class=\"d3-color-FF888888\">Chance to Block</span></p></li><li><p><span class=\"value\">" + str_amount +
+        "</span> <span class=\"d3-color-FF888888\">Block Amount</span></p></li></ul>";
+    }
+
+    tooltip += "<div class=\"item-before-effects\"></div><ul class=\"item-effects\">";
+    int sockets = 0, random = 0, primary = 0, secondary = 0;
+    std::vector<json::Value> groups;
+    if (parsed.has("primary")) {
+      for (auto const& attr : parsed["primary"].getArray()) {
+        std::vector<std::string> sub;
+        if (attr.type() == json::Value::tArray) {
+          groups.push_back(attr);
+        } else if (re_sockets.find(attr.getString(), 0, &sub) >= 0) {
+          sockets = std::stoi(sub[1]);
+        } else if (re_random.find(attr.getString(), 0, &sub) >= 0) {
+          random += std::stoi(sub[1]);
+        } else {
+          if (!primary++) tooltip += "<p class=\"item-property-category\">Primary</p>";
+          tooltip += attr.getString();
+        }
+      }
+    }
+    if (parsed.has("secondary")) {
+      for (auto const& attr : parsed["secondary"].getArray()) {
+        std::vector<std::string> sub;
+        //if (attr.type() == json::Value::tArray) {
+        if (attr.type() == json::Value::tArray) {
+          groups.push_back(attr);
+        } else if (re_random.find(attr.getString(), 0, &sub) >= 0) {
+          random += std::stoi(sub[1]);
+        } else {
+          if (!secondary++) tooltip += "<p class=\"item-property-category\">Secondary</p>";
+          tooltip += attr.getString();
+        }
+      }
+    }
+
+    if (random || groups.size()) {
+      tooltip += "<br/>";
+      for (auto const& group : groups) {
+        if (group.length() > 10) {
+          ++random;
+          continue;
+        }
+        tooltip += fmtstring("<li class=\"item-effects-choice\"><span class=\"d3-color-blue\">One of <span class=\"value\">%d</span> Magic Properties (varies)</span><ul>", group.length());
+        for (auto const& sub : group.getArray()) {
+          tooltip += sub.getString();
+        }
+        tooltip += "</ul></li>";
+      }
+      if (random) {
+        tooltip += "<li class=\"d3-color-blue\"><span class=\"value\">+" + fmtstring("%d", random) + "</span> Random Magic Properties</li>";
+      }
+    }
+
+    for (int i = 0; i < sockets; ++i) {
+      tooltip += "<li class=\"empty-socket d3-color-blue\">Empty Socket</li>";
+    }
+
+    tooltip += "</ul>";
+
+    if (parsed.has("set")) {
+      if (itemSets.empty()) {
+        for (auto const& kv : ItemLibrary::all()) {
+          if (SnoManager::gameBalance()[kv.second->x170_SetItemBonusesGameBalanceId]) {
+            itemSets[kv.second->x170_SetItemBonusesGameBalanceId.id].push_back(kv.second);
+          }
+        }
+
+        SnoFile<GameBalance> sets("SetItemBonuses");
+        for (auto& it : sets->x168_SetItemBonusTable) {
+          parseSetBonus(it, setData, true);
+        }
+      }
+
+      std::map<std::string, std::string> setItems;
+      for (auto const& sub : itemSets[item->x170_SetItemBonusesGameBalanceId.id]) {
+        if (!input["itemById"].has(sub->x000_Text)) continue;
+        std::string itype = input["itemById"][sub->x000_Text]["type"].getString();
+        std::string islot = input["itemTypes"][itype]["slot"].getString();
+        if (input["metaSlots"].has(islot)) {
+          islot = input["metaSlots"][islot]["name"].getString();
+        } else {
+          islot = input["itemSlots"][islot]["name"].getString();
+        }
+        setItems[itype] = fmtstring("%s (%s)", names[sub->x000_Text].c_str(), islot.c_str());
+      }
+
+      tooltip += "<ul class=\"item-itemset\"><li class=\"item-itemset-name\"><span class=\"d3-color-green\">" + parsed["set"].getString() + "</span></li>";
+      for (auto const& sub : setItems) {
+        tooltip += "<li class=\"item-itemset-piece indent\"><span class=\"d3-color-gray\">" + sub.second + "</span></li>";
+      }
+
+      std::string name = getname.replace(item->x170_SetItemBonusesGameBalanceId.name(), "\\1");
+      if (setData.has(name)) {
+        for (int i = 1; i < 10; ++i) {
+          std::string key = fmtstring("%d", i);
+          if (setData[name].has(key)) {
+            auto list = setData[name][key];
+            tooltip += "<li class=\"d3-color-gray item-itemset-bonus-amount\">(<span class=\"value\">" + key + "</span>) Set:</li>";
+            for (auto const& bonus : list.getArray()) {
+              tooltip += "<li class=\"d3-color-gray item-itemset-bonus-desc indent\">" + bonus.getString() + "</li>";
+            }
+          }
+        }
+      }
+      tooltip += "</ul>";
+    }
+
+    tooltip += "<ul class=\"item-extras\"><li class=\"item-reqlevel\"><span class=\"d3-color-gold\">Required Level: </span><span class=\"value\">70</span></li>";
+    tooltip += "<li>Account Bound</li></ul><span class=\"item-unique-equipped\">Unique Equipped</span><span class=\"clear\"><!--   --></span></div></div>";
+
+    if (parsed.has("flavor")) {
+      tooltip += "<div class=\"tooltip-extension \"><div class=\"flavor\">" + parsed["flavor"].getString() + "</div></div>";
+    }
+
+    tooltip += "</div></div>";
+
+    dst["tooltip"] = tooltip;
+
+    //"<div class=\"tooltip-extension \"><div class=\"flavor\">A mighty symbol of Tyrael, the archangel of Justice, though never actually used by him. Stolen from the Courts of Justice in the High Heavens by renegade angels.</div></div></div></div>"
+  }
+
+  File fout(fmtstring("kadala.%d.js", build), "wb");
+  fout.printf("var Kadala = ");
+  json::write(fout, output, json::mJS);
+  fout.seek(-1, SEEK_CUR);
+  fout.printf(";\n");
+}
+
+uint32 build_id(std::string const& hash) {
+  auto config = SnoCdnLoader::buildinfo(hash);
+  SnoCdnLoader::BuildInfo info;
+  SnoCdnLoader::parsebuild(config, info);
+  return info.build;
+}
+
 bool load_build(uint32 build) {
   auto builds = SnoCdnLoader::builds();
-  SnoCdnLoader::BuildInfo info;
   for (std::string const& b : builds) {
-    auto config = SnoCdnLoader::buildinfo(b);
-    SnoCdnLoader::parsebuild(config, info);
-    if (info.build == build) {
+    if (build_id(b) == build) {
       try {
         SnoLoader::primary = new SnoCdnLoader(b, "enUS");
         return true;
@@ -211,6 +606,9 @@ int do_main(uint32 build) {
     return 1;
   }
 
+  //SnoLoader::primary->dump<GameBalance>();
+  //return 0;
+
   json::Value versions;
   json::parse(File(path::work() / "versions.js"), versions);
   uint32 prevVersion = 0;
@@ -221,10 +619,30 @@ int do_main(uint32 build) {
     }
   }
   versions[fmtstring("%d", build)] = SnoLoader::primary->version();
+/*  uint32 live_id = 0, ptr_id = 0;
+  auto all_builds = SnoCdnLoader::builds();
+  if (all_builds.size() >= 1) live_id = build_id(all_builds[0]);
+  if (all_builds.size() >= 2) ptr_id = build_id(all_builds[1]);
+  for (auto const& kv : versions.getMap()) {
+    std::string name = kv.second.getString();
+    size_t space = name.find(' ');
+    if (space != std::string::npos) {
+      name = name.substr(0, space);
+    }
+    uint32 id = std::atoi(kv.first.c_str());
+    if (id == live_id) {
+      name.append(" (Live)");
+    } else if (id == ptr_id) {
+      name.append(" (PTR)");
+    }
+    versions[kv.first] = name;
+  }*/
   json::write(File(path::work() / "versions.js", "wb"), versions);
 
+  OpGmb(build);
   OpExtract(build);
   OpDumpPowers(build);
+  OpKadala(build);
   json::write(File(path::root() / "game/versions.js", "wb"), versions);
   json::write(File(path::root() / "diff/versions.js", "wb"), versions);
   json::write(File(path::root() / "powers/versions.js", "wb"), versions);
@@ -249,6 +667,14 @@ int do_main(uint32 build) {
 
 int main(int argc, const char** argv) {
   std::setlocale(LC_ALL, "eu_US.UTF-8");
+
+  /*try {
+    SnoCdnLoader::convert();
+    return 0;
+  } catch (Exception& ex) {
+    fprintf(stderr, "Exception: %s\n", ex.what());
+    return 1;
+  }*/
 
 #ifndef _MSC_VER
   int pid_file = open("autoparse.pid", O_CREAT | O_RDWR, 0666);

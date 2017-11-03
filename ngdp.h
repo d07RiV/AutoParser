@@ -41,10 +41,10 @@ namespace NGDP {
   std::map<std::string, CdnData> GetCdns(std::string const& app = PROGRAM);
   struct VersionData {
     std::string build;
+    std::string build2;
     std::string cdn;
     uint32 id;
     std::string version;
-    std::string version2;
   };
   std::map<std::string, VersionData> GetVersions(std::string const& app = PROGRAM);
 
@@ -129,7 +129,8 @@ namespace NGDP {
     };
     struct ArchiveInfo {
       std::string name;
-      std::vector<uint8> mask;
+      std::vector<uint32> map;
+      enum { INVALID = 0xFFFFFFFFUL };
     };
     NGDP const& ngdp_;
     uint32 blockSize_;

@@ -124,6 +124,7 @@ std::string FormulaParser::Value::format() {
 static const char funcTable = -128;
 static const char funcMin = -127;
 static const char funcMax = -126;
+static const char funcFloor = -125;
 struct OpInfo {
   char sym;
   int lprio, rprio;
@@ -149,6 +150,7 @@ static OpInfo opInfos[] = {
   { funcTable, 13, 0, 1, 1 },
   { funcMin, 13, 0, 1, 1 },
   { funcMax, 13, 0, 1, 1 },
+  { funcFloor, 13, 0, 1, 1 },
 };
 static OpInfo const& opInfo(char sym) {
   for (auto& op : opInfos) {
@@ -207,6 +209,13 @@ void EvalStack::exec(char chr) {
     a = vals.top(); vals.pop();
     vals.push(binop(a, b, chr));
     break;
+  case funcFloor:
+    if (vals.size() < 1) return;
+    if (vals.top().text.empty()) {
+      a = vals.top(); vals.pop();
+      vals.emplace(floor(a.min), floor(a.max));
+    }
+    break;
   case '~':
     if (vals.size() < 1) return;
     if (vals.top().text.empty()) {
@@ -229,6 +238,7 @@ static char getFunction(std::string const& name) {
   if (id == "table") return funcTable;
   if (id == "min") return funcMin;
   if (id == "max") return funcMax;
+  if (id == "floor") return funcFloor;
   return '(';
 }
 
@@ -516,6 +526,10 @@ AttributeValue ExecFormula(uint32 const* begin, uint32 const* end, AttributeMap 
         b = stack.top(); stack.pop();
         a = stack.top(); stack.pop();
         stack.emplace(std::min(a.min, b.min), std::max(a.max, b.max));
+        break;
+      case 5: // floor
+        a = stack.top(); stack.pop();
+        stack.emplace(floor(a.min), floor(a.max));
         break;
       case 11: // table lookup
         b = stack.top(); stack.pop();

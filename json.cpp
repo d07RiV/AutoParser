@@ -104,27 +104,56 @@ Value::Value(Value const& rhs)
 }
 
 Value& Value::operator=(Value const& rhs) {
-  clear();
-  type_ = rhs.type_;
-  switch (type_) {
+  if (&rhs == this) return *this;
+  switch (rhs.type_) {
   case tString:
-    string_ = new std::string(*rhs.string_);
+  {
+    std::string* tmp = new std::string(*rhs.string_);
+    clear();
+    type_ = tString;
+    string_ = tmp;
     break;
+  }
   case tObject:
-    map_ = new Map(*rhs.map_);
+  {
+    Map* tmp = new Map(*rhs.map_);
+    clear();
+    type_ = tObject;
+    map_ = tmp;
     break;
+  }
   case tArray:
-    array_ = new Array(*rhs.array_);
+  {
+    Array* tmp = new Array(*rhs.array_);
+    clear();
+    type_ = tArray;
+    array_ = tmp;
     break;
+  }
   case tInteger:
-    int_ = rhs.int_;
+  {
+    int tmp = rhs.int_;
+    clear();
+    type_ = tInteger;
+    int_ = tmp;
     break;
+  }
   case tNumber:
-    number_ = rhs.number_;
+  {
+    double tmp = rhs.number_;
+    clear();
+    type_ = tNumber;
+    number_ = tmp;
     break;
+  }
   case tBoolean:
-    bool_ = rhs.bool_;
+  {
+    bool tmp = rhs.bool_;
+    clear();
+    type_ = tBoolean;
+    bool_ = tmp;
     break;
+  }
   }
   return *this;
 }
@@ -321,6 +350,10 @@ Value& Value::operator[](int i) {
     array_->resize(i + 1);
   }
   return (*array_)[i];
+}
+void Value::resize(size_t size) {
+  setType(tArray);
+  array_->resize(size);
 }
 
 Value::Iterator Value::begin() {

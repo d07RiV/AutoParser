@@ -25,7 +25,7 @@ int fixAttrId(int id, bool reverse) {
           auto const& formula = tag->formula(kv.second.getString().substr(spos + 1));
           uint32 const* begin = formula.data();
           uint32 const* end = begin + formula.size();
-          uint32 x, y, z, w;
+          uint32 x, y/*, z, w*/;
           while (begin < end) {
             switch (*begin++) {
             case 1:
@@ -35,8 +35,8 @@ int fixAttrId(int id, bool reverse) {
             case 5:
               x = *begin++;
               y = *begin++;
-              z = *begin++;
-              w = *begin++;
+              /*z = **/begin++;
+              /*w = **/begin++;
               if (x == 0) {
                 fix_forward[y] = index;
                 fix_reverse[index] = y;
@@ -103,24 +103,24 @@ GameAffixes::GameAffixes() {
   for (auto& fx : affixList->x078_AffixTable) {
     uint32 id = HashNameLower(fx.x000_Text);
     GameAffix& affix = affixes_[id];
-    for (auto id : fx.x178_GameBalanceIds) {
+    for (auto id : fx.x17C_GameBalanceIds) {
       if (id != -1U) affix.itemTypes.insert(id);
     }
-    for (auto id : fx.x190_GameBalanceIds) {
+    for (auto id : fx.x194_GameBalanceIds) {
       if (id != -1U) affix.itemTypes.insert(id);
     }
-    for (auto id : fx.x1F0_GameBalanceIds) {
+    for (auto id : fx.x1F4_GameBalanceIds) {
       if (id != -1U) affix.itemTypes.insert(id);
     }
     for (size_t i = 0; i < AffixValue::MaxAttributes; ++i) {
       affix.value.attributes[i] = AttributeSpecifier(fx.x260_AttributeSpecifiers[i], defaultMap_);
     }
     std::sort(affix.value.attributes, affix.value.attributes + AffixValue::MaxAttributes, AttributeSpecifier::less);
-    if (fx.x168_AffixGroupGameBalanceId != -1U) {
-      groups_[fx.x168_AffixGroupGameBalanceId].push_back(&affix);
-    }
     if (fx.x16C_AffixGroupGameBalanceId != -1U) {
       groups_[fx.x16C_AffixGroupGameBalanceId].push_back(&affix);
+    }
+    if (fx.x170_AffixGroupGameBalanceId != -1U) {
+      groups_[fx.x170_AffixGroupGameBalanceId].push_back(&affix);
     }
   }
 
@@ -176,6 +176,7 @@ GameAffixes::GameAffixes() {
   itemTypes_[HashNameLower("FistWeapon")] = "fistweapon";
   itemTypes_[HashNameLower("Flail1H")] = "flail";
   itemTypes_[HashNameLower("MightyWeapon1H")] = "mightyweapon";
+  itemTypes_[HashNameLower("Scythe1H")] = "scythe";
   itemTypes_[HashNameLower("Wand")] = "wand";
   itemTypes_[HashNameLower("HandXbow")] = "handcrossbow";
   itemTypes_[HashNameLower("Axe2H")] = "axe2h";
@@ -186,6 +187,7 @@ GameAffixes::GameAffixes() {
   itemTypes_[HashNameLower("CombatStaff")] = "daibo";
   itemTypes_[HashNameLower("Flail2H")] = "flail2h";
   itemTypes_[HashNameLower("MightyWeapon2H")] = "mightyweapon2h";
+  itemTypes_[HashNameLower("Scythe2H")] = "scythe2h";
   itemTypes_[HashNameLower("Bow")] = "bow";
   itemTypes_[HashNameLower("Crossbow")] = "crossbow";
   itemTypes_[HashNameLower("Shield")] = "shield";
@@ -193,6 +195,7 @@ GameAffixes::GameAffixes() {
   itemTypes_[HashNameLower("Orb")] = "source";
   itemTypes_[HashNameLower("Mojo")] = "mojo";
   itemTypes_[HashNameLower("Quiver")] = "quiver";
+  itemTypes_[HashNameLower("NecromancerOffhand")] = "phylactery";
 }
 
 AffixValue const& GameAffixes::getAffix(uint32 id, bool recipe) {
@@ -263,6 +266,7 @@ std::vector<std::string> GameAffixes::format(AttributeSpecifier const* begin, At
         continue;
       }
       AttributeMap map = defaultMap;
+      map.emplace("value", begin->value);
       map.emplace("value1", begin->value);
       result.push_back(FormatDescription(affix, flags, map, PowerTags::getraw(begin->param)));
     } else if (affix[0] == '&') {

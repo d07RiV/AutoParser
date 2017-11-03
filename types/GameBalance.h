@@ -24,7 +24,7 @@ declstruct(GameBalance::Type) {
     int x10C;
     int x110;
     int x114;
-    uint32 x118_Bit0 : 1, x118_Bit1 : 1, : 1, x118_Bit3 : 1, : 2, x118_Bit6 : 1, x118_Bit7 : 1, x118_Bit8 : 1, x118_Bit9 : 1, x118_Bit10 : 1, x118_Bit11 : 1, x118_Bit12 : 1, x118_Bit13 : 1, x118_Bit14 : 1, x118_Bit15 : 1, x118_Bit16 : 1, x118_Bit17 : 1, : 14;
+    uint32 x118_Bit0 : 1, x118_Bit1 : 1, : 1, x118_Bit3 : 1, : 2, x118_Bit6 : 1, x118_Bit7 : 1, x118_Bit8 : 1, x118_Bit9 : 1, x118_Bit10 : 1, x118_Bit11 : 1, x118_Bit12 : 1, x118_Bit13 : 1, x118_Bit14 : 1, x118_Bit15 : 1, x118_Bit16 : 1, x118_Bit17 : 1, : 2, x118_Bit20 : 1, : 11;
     int x11C_Enum; // Player:Backpack = 0, Player:Head = 1, Player:Torso = 2, Player:RightHand = 3, Player:LeftHand = 4, Player:Hands = 5, Player:Waist = 6, Player:Feet = 7, Player:Shoulders = 8, Player:Legs = 9, Player:Bracers = 10, Player:LeftFinger = 12, Player:RightFinger = 11, Player:Neck = 13, Merchant = 18, Pet:RightHand = 20, Pet:LeftHand = 21, Pet:Special = 22, Pet:LeftFinger = 25, Pet:RightFinger = 24, Pet:Neck = 23
     int x120_Enum; // Player:Backpack = 0, Player:Head = 1, Player:Torso = 2, Player:RightHand = 3, Player:LeftHand = 4, Player:Hands = 5, Player:Waist = 6, Player:Feet = 7, Player:Shoulders = 8, Player:Legs = 9, Player:Bracers = 10, Player:LeftFinger = 12, Player:RightFinger = 11, Player:Neck = 13, Merchant = 18, Pet:RightHand = 20, Pet:LeftHand = 21, Pet:Special = 22, Pet:LeftFinger = 25, Pet:RightFinger = 24, Pet:Neck = 23
     int x124_Enum; // Player:Backpack = 0, Player:Head = 1, Player:Torso = 2, Player:RightHand = 3, Player:LeftHand = 4, Player:Hands = 5, Player:Waist = 6, Player:Feet = 7, Player:Shoulders = 8, Player:Legs = 9, Player:Bracers = 10, Player:LeftFinger = 12, Player:RightFinger = 11, Player:Neck = 13, Merchant = 18, Pet:RightHand = 20, Pet:LeftHand = 21, Pet:Special = 22, Pet:LeftFinger = 25, Pet:RightFinger = 24, Pet:Neck = 23
@@ -124,13 +124,13 @@ declstruct(GameBalance::Type) {
     int x3D8;
     int x3DC;
     int x3E0;
-    GameBalanceId x3E4_AffixGroupGameBalanceId;
+    int x3E4;
     GameBalanceId x3E8_AffixGroupGameBalanceId;
     GameBalanceId x3EC_AffixGroupGameBalanceId;
     GameBalanceId x3F0_AffixGroupGameBalanceId;
     GameBalanceId x3F4_AffixGroupGameBalanceId;
     GameBalanceId x3F8_AffixGroupGameBalanceId;
-    int x3FC;
+    GameBalanceId x3FC_AffixGroupGameBalanceId;
     int x400;
     int x404;
     int x408;
@@ -142,37 +142,33 @@ declstruct(GameBalance::Type) {
     int x420;
     int x424;
     int x428;
-    GameBalanceId x42C_GameBalanceId;
-    int x430_Enum; // Amethyst = 1, Emerald = 2, Ruby = 3, Topaz = 4, Diamond = 5
-    int x434;
-    int x438_Enum; // A = 1, B = 2, C = 3, D = 4
-    Sno<Actor> x43C_ActorSno;
-    Sno<Worlds> x440_WorldsSno;
+    int x42C;
+    GameBalanceId x430_GameBalanceId;
+    int x434_Enum; // Amethyst = 1, Emerald = 2, Ruby = 3, Topaz = 4, Diamond = 5
+    int x438;
+    int x43C_Enum; // A = 1, B = 2, C = 3, D = 4
+    Sno<Actor> x440_ActorSno;
     Sno<Worlds> x444_WorldsSno;
-    Sno<LevelArea> x448_LevelAreaSno;
-    int x44C;
-    RecipeIngredient x450_RecipeIngredients[6];
-    int x480;
-    RecipeIngredient x484_RecipeIngredients[6];
-    int x4B4;
-#if SNOBUILD >= 32445
-    int x4B8_;
-    int x4BC_;
-#endif
-    AttributeSpecifier x4B8_AttributeSpecifier;
-    AttributeSpecifier x4D0_AttributeSpecifier;
-    int x4E8;
-    int x4EC;
-    Sno<EffectGroup> x4F0_EffectGroupSno;
+    Sno<Worlds> x448_WorldsSno;
+    Sno<LevelArea> x44C_LevelAreaSno;
+    int x450;
+    RecipeIngredient x454_RecipeIngredients[6];
+    int x484;
+    RecipeIngredient x488_RecipeIngredients[6];
+    int x4B8;
+    int x4BC;
+    AttributeSpecifier x4C0_AttributeSpecifier;
+    AttributeSpecifier x4D8_AttributeSpecifier;
+    int x4F0;
     int x4F4;
-    int x4F8;
+    Sno<EffectGroup> x4F8_EffectGroupSno;
     int x4FC;
-#if SNOBUILD >= 32445
-    int x508_;
-    int x50C_;
-    int x510_;
-    int x514_;
-#endif
+    int x500;
+    int x504;
+    int x508;
+    int x50C;
+    int x510;
+    int x514_TreasureClassSno;
     void dumpfunc() {
       dumpval(x000_Text, x100, x104, x108_ActorSno, x10C_ItemTypesGameBalanceId, x110_Bit0);
       dumpval(x110_Bit1, x110_Bit2, x110_Bit3, x110_Bit4, x110_Bit5, x110_Bit6);
@@ -191,16 +187,17 @@ declstruct(GameBalance::Type) {
       dumpval(x1F8_AttributeSpecifiers);
       dumpval(x378_Enum, x37C_GameBalanceIds);
       dumpval(x3A4_GameBalanceIds, x3C4, x3C8, x3CC, x3D0, x3D4);
-      dumpval(x3D8, x3DC, x3E0, x3E4_AffixGroupGameBalanceId, x3E8_AffixGroupGameBalanceId, x3EC_AffixGroupGameBalanceId);
-      dumpval(x3F0_AffixGroupGameBalanceId, x3F4_AffixGroupGameBalanceId, x3F8_AffixGroupGameBalanceId, x3FC, x400, x404);
+      dumpval(x3D8, x3DC, x3E0, x3E4, x3E8_AffixGroupGameBalanceId, x3EC_AffixGroupGameBalanceId);
+      dumpval(x3F0_AffixGroupGameBalanceId, x3F4_AffixGroupGameBalanceId, x3F8_AffixGroupGameBalanceId, x3FC_AffixGroupGameBalanceId, x400, x404);
       dumpval(x408, x40C, x410, x414, x418, x41C);
-      dumpval(x420, x424, x428, x42C_GameBalanceId, x430_Enum, x434);
-      dumpval(x438_Enum, x43C_ActorSno, x440_WorldsSno, x444_WorldsSno, x448_LevelAreaSno, x44C);
-      dumpval(x450_RecipeIngredients, x480, x484_RecipeIngredients, x4B4);
-      dumpval(x4B8_AttributeSpecifier, x4D0_AttributeSpecifier, x4E8, x4EC, x4F0_EffectGroupSno, x4F4);
-      dumpval(x4F8, x4FC);
+      dumpval(x420, x424, x428, x42C, x430_GameBalanceId, x434_Enum);
+      dumpval(x438, x43C_Enum, x440_ActorSno, x444_WorldsSno, x448_WorldsSno, x44C_LevelAreaSno);
+      dumpval(x450, x454_RecipeIngredients, x484, x488_RecipeIngredients, x4B8, x4BC);
+      dumpval(x4C0_AttributeSpecifier, x4D8_AttributeSpecifier, x4F0, x4F4, x4F8_EffectGroupSno, x4FC);
+      dumpval(x500, x504, x508, x50C, x510, x514_TreasureClassSno);
     }
   };
+  structsize(Item, 0x518);
 
   declstruct(ExperienceLevel) {
     int64 x000;
@@ -245,10 +242,10 @@ declstruct(GameBalance::Type) {
     int x0A0;
     int x0A4;
     int x0A8;
-    float x0AC;
+    int x0AC;
     float x0B0;
     float x0B4;
-    int x0B8;
+    float x0B8;
     int x0BC;
     int x0C0;
     int x0C4;
@@ -272,15 +269,15 @@ declstruct(GameBalance::Type) {
     int x10C;
     int x110;
     int x114;
-    uint32 x118_;
-    uint32 x11C_;
-    uint32 x120_;
-    uint32 x124_;
+    int x118;
+    int x11C;
+    int x120;
+    int x124;
     int x128;
-    int x12C;
-    int x130;
-    int x134;
-    int x138;
+    uint32 x12C_;
+    uint32 x130_;
+    uint32 x134_;
+    uint32 x138_;
     int x13C;
     int x140;
     int x144;
@@ -288,17 +285,17 @@ declstruct(GameBalance::Type) {
     int x14C;
     int x150;
     int x154;
-    uint32 x158_;
-    float x15C;
-    float x160;
-    float x164;
-    int64 x168;
-    int x170;
-    int x174;
-    int x178;
-    int x17C;
-    int x180;
-    int x184;
+    int x158;
+    int x15C;
+    int x160;
+    int x164;
+    int x168;
+    uint32 x16C_;
+    float x170;
+    float x174;
+    float x178;
+    uint32 x17C_;
+    int64 x180;
     int x188;
     int x18C;
     int x190;
@@ -311,14 +308,20 @@ declstruct(GameBalance::Type) {
     int x1AC;
     int x1B0;
     int x1B4;
-    float x1B8;
+    int x1B8;
     int x1BC;
     int x1C0;
     int x1C4;
     int x1C8;
     int x1CC;
-    int x1D0;
-    uint32 x1D4_;
+    float x1D0;
+    int x1D4;
+    int x1D8;
+    int x1DC;
+    int x1E0;
+    int x1E4;
+    int x1E8;
+    float x1EC;
     void dumpfunc() {
       dumpval(x000, x008, x00C, x010, x014, x018);
       dumpval(x01C, x020, x024, x028, x02C, x030);
@@ -331,16 +334,18 @@ declstruct(GameBalance::Type) {
       dumpval(x0C4, x0C8, x0CC, x0D0, x0D4, x0D8);
       dumpval(x0DC, x0E0, x0E4, x0E8, x0EC, x0F0);
       dumpval(x0F4, x0F8, x0FC, x100, x104, x108);
-      dumpval(x10C, x110, x114, x128, x12C, x130);
-      dumpval(x134, x138, x13C, x140, x144, x148);
-      dumpval(x14C, x150, x154, x15C, x160, x164);
-      dumpval(x168, x170, x174, x178, x17C, x180);
-      dumpval(x184, x188, x18C, x190, x194, x198);
-      dumpval(x19C, x1A0, x1A4, x1A8, x1AC, x1B0);
-      dumpval(x1B4, x1B8, x1BC, x1C0, x1C4, x1C8);
-      dumpval(x1CC, x1D0);
+      dumpval(x10C, x110, x114, x118, x11C, x120);
+      dumpval(x124, x128, x13C, x140, x144, x148);
+      dumpval(x14C, x150, x154, x158, x15C, x160);
+      dumpval(x164, x168, x170, x174, x178, x180);
+      dumpval(x188, x18C, x190, x194, x198, x19C);
+      dumpval(x1A0, x1A4, x1A8, x1AC, x1B0, x1B4);
+      dumpval(x1B8, x1BC, x1C0, x1C4, x1C8, x1CC);
+      dumpval(x1D0, x1D4, x1D8, x1DC, x1E0, x1E4);
+      dumpval(x1E8, x1EC);
     }
   };
+  structsize(ExperienceLevel, 0x1F0);
 
   declstruct(ExperienceLevelAlt) {
     int64 x00;
@@ -370,14 +375,20 @@ declstruct(GameBalance::Type) {
     int x64;
     int x68;
     int x6C;
+    int x70;
+    int x74;
+    int x78;
+    int x7C;
     void dumpfunc() {
       dumpval(x00, x08, x0C, x10, x14, x18);
       dumpval(x1C, x20, x24, x28, x2C, x30);
       dumpval(x34, x38, x3C, x40, x44, x48);
       dumpval(x4C, x50, x54, x58, x5C, x60);
-      dumpval(x64, x68, x6C);
+      dumpval(x64, x68, x6C, x70, x74, x78);
+      dumpval(x7C);
     }
   };
+  structsize(ExperienceLevelAlt, 0x80);
 
   declstruct(HelpCodes) {
     SerializeData x00_SerializeData;
@@ -484,23 +495,23 @@ declstruct(GameBalance::Type) {
     int x144;
     int x148;
     int x14C;
-    int x150_Enum; // - None - = 0, Lightning = 1, Cold = 2, Fire = 3, Poison = 4, Arcane = 5, WitchdoctorDamage = 6, LifeSteal = 7, ManaSteal = 8, MagicFind = 9, GoldFind = 10, AttackSpeedBonus = 11, CastSpeedBonus = 12, Holy = 13, WizardDamage = 14
-    int x154;
-    GameBalanceId x158_AffixListGameBalanceId;
+    int x150;
+    int x154_Enum; // - None - = 0, Lightning = 1, Cold = 2, Fire = 3, Poison = 4, Arcane = 5, WitchdoctorDamage = 6, LifeSteal = 7, ManaSteal = 8, MagicFind = 9, GoldFind = 10, AttackSpeedBonus = 11, CastSpeedBonus = 12, Holy = 13, WizardDamage = 14
+    int x158;
     GameBalanceId x15C_AffixListGameBalanceId;
-    Sno<StringList> x160_StringListSno;
+    GameBalanceId x160_AffixListGameBalanceId;
     Sno<StringList> x164_StringListSno;
-    GameBalanceId x168_AffixGroupGameBalanceId;
+    Sno<StringList> x168_StringListSno;
     GameBalanceId x16C_AffixGroupGameBalanceId;
-    int x170_Enum; // - None - = -1, DemonHunter = 0, Barbarian = 1, Wizard = 2, Witchdoctor = 3, Monk = 4, Crusader = 5
-    GameBalanceId x174_AffixListGameBalanceId;
-    GameBalanceId x178_GameBalanceIds[6];
-    GameBalanceId x190_GameBalanceIds[24];
-    GameBalanceId x1F0_GameBalanceIds[24];
-    int x250;
-    int x254_Enum; // Prefix = 0, Suffix = 1, Inherent = 2, Title = 5, Quality = 6, Immunity = 7, Random = 9, Enchantment = 10, Socket Enhancement = 11
-    GameBalanceId x258_AffixListGameBalanceId;
-    uint32 x25C_;
+    GameBalanceId x170_AffixGroupGameBalanceId;
+    int x174_Enum; // - None - = -1, DemonHunter = 0, Barbarian = 1, Wizard = 2, Witchdoctor = 3, Monk = 4, Crusader = 5
+    GameBalanceId x178_AffixListGameBalanceId;
+    GameBalanceId x17C_GameBalanceIds[6];
+    GameBalanceId x194_GameBalanceIds[24];
+    GameBalanceId x1F4_GameBalanceIds[24];
+    int x254;
+    int x258_Enum; // Prefix = 0, Suffix = 1, Inherent = 2, Title = 5, Quality = 6, Immunity = 7, Random = 9, Enchantment = 10, Socket Enhancement = 11
+    GameBalanceId x25C_AffixListGameBalanceId;
     AttributeSpecifier x260_AttributeSpecifiers[4];
     uint32 x2C0_;
     uint32 x2C4_;
@@ -526,12 +537,13 @@ declstruct(GameBalance::Type) {
       dumpval(x000_Text, x100, x104, x108, x10C, x110);
       dumpval(x114, x118, x11C, x120, x124, x128);
       dumpval(x12C, x130, x134, x138, x13C, x140);
-      dumpval(x144, x148, x14C, x150_Enum, x154, x158_AffixListGameBalanceId);
-      dumpval(x15C_AffixListGameBalanceId, x160_StringListSno, x164_StringListSno, x168_AffixGroupGameBalanceId, x16C_AffixGroupGameBalanceId, x170_Enum);
-      dumpval(x174_AffixListGameBalanceId, x178_GameBalanceIds, x190_GameBalanceIds, x1F0_GameBalanceIds, x250, x254_Enum);
-      dumpval(x258_AffixListGameBalanceId, x260_AttributeSpecifiers, x308_Enum);
+      dumpval(x144, x148, x14C, x150, x154_Enum, x158);
+      dumpval(x15C_AffixListGameBalanceId, x160_AffixListGameBalanceId, x164_StringListSno, x168_StringListSno, x16C_AffixGroupGameBalanceId, x170_AffixGroupGameBalanceId);
+      dumpval(x174_Enum, x178_AffixListGameBalanceId, x17C_GameBalanceIds, x194_GameBalanceIds, x1F4_GameBalanceIds, x254);
+      dumpval(x258_Enum, x25C_AffixListGameBalanceId, x260_AttributeSpecifiers, x308_Enum);
     }
   };
+  structsize(AffixTableEntry, 0x310);
 
   declstruct(HeroData) {
     char x000_Text[256];

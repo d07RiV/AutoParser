@@ -152,6 +152,8 @@ declstruct(Monster::Type) {
   Array<MonsterChampionSpawnGroup> x4B0_MonsterChampionSpawnGroups = x4B8_SerializeData;
   SerializeData x4B8_SerializeData;
   char x4C0_Text[128];
+  int x540;
+  int x544;
   void dumpfunc() {
     dumpval(x000_Header, x00C, x010_ActorSno, x014, x018_Enum, x01C_Enum);
     dumpval(x020_Enum, x024_Monster, x038_Enum, x03C, x040, x044_float);
@@ -162,8 +164,9 @@ declstruct(Monster::Type) {
     dumpval(x3C4, x3C8, x3CC, x3D0_TreasureClassSno, x3D4_TreasureClassSno, x3D8_LoreSno);
     dumpval(x3DC_Snos, x3F4_GameBalanceIds, x414_Snos, x42C, x430_GameBalanceIds, x440_GameBalanceIds);
     dumpval(x458, x45C, x460, x464_Enum, x488_TagMap, x490);
-    dumpval(x498_MonsterMinionSpawnGroups, x4A8, x4B0_MonsterChampionSpawnGroups, x4C0_Text);
+    dumpval(x498_MonsterMinionSpawnGroups, x4A8, x4B0_MonsterChampionSpawnGroups, x4C0_Text, x540, x544);
   }
 };
+structsize(Monster::Type, 0x548);
 
 #pragma pack(pop)

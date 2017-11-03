@@ -3,8 +3,6 @@
 #include <algorithm>
 #include <list>
 
-#define NOLOGGER
-
 #ifdef _MSC_VER
 #define NOMINMAX
 #include <conio.h>
@@ -12,6 +10,7 @@
 void ConsoleStart() {}
 void ConsoleEnd() {}
 #else
+#define NOLOGGER
 #include <ncurses.h>
 typedef WINDOW* HANDLE;
 typedef void VOID;

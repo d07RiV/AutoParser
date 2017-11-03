@@ -55,6 +55,7 @@ size_t SnoSize() {
 }
 
 #define declstruct(sname) struct sname : public Serializable<sname>
+#define structsize(sname,size) static_assert(sizeof(sname)==size, #sname " incorrect size");
 #define dumpfunc() dump(json::Visitor* visitor)
 #define do_write(x) _write(#x, x, visitor)
 #define do_write2(x,y) do{do_write(x);do_write(y);}while(0)
